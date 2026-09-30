@@ -1,0 +1,867 @@
+openapi: 3.0.3
+
+info:
+  title: API Usuarios - Subsonic Festival
+  description: >
+    API encargada de gestionar los usuarios de Subsonic Festival,
+    incluyendo el registro, los perfiles, los tipos de usuario
+    y sus métodos de pago.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Servidor local
+
+tags:
+  - name: Usuarios
+    description: Gestión de los usuarios de Subsonic Festival
+
+paths:
+
+  /usuarios:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener todos los usuarios
+      description: >
+        Devuelve la lista de usuarios registrados.
+        Permite filtrar por tipo de usuario.
+      parameters:
+        - name: tipo
+          in: query
+          required: false
+          description: Tipo de usuario
+          schema:
+            type: string
+            enum:
+              - cliente
+              - proveedor
+              - administrador
+            example: cliente
+
+      responses:
+        '200':
+          description: Usuarios obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Usuario'
+
+        '400':
+          description: Parámetros de búsqueda no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    post:
+      tags:
+        - Usuarios
+      summary: Registrar un usuario
+      description: >
+        Registra un nuevo usuario en Subsonic Festival.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroUsuario'
+
+      responses:
+        '201':
+          description: Usuario registrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+
+        '400':
+          description: Datos de registro no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: Ya existe un usuario con ese correo electrónico
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /usuarios/login:
+    post:
+      tags:
+        - Usuarios
+      summary: Iniciar sesión
+      description: >
+        Comprueba las credenciales de un usuario y permite
+        iniciar sesión en la plataforma.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+
+      responses:
+        '200':
+          description: Inicio de sesión correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sesion'
+
+        '400':
+          description: Datos de inicio de sesión no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '401':
+          description: Credenciales incorrectas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /usuarios/{idUsuario}:
+    parameters:
+      - name: idUsuario
+        in: path
+        required: true
+        description: Identificador del usuario
+        schema:
+          type: integer
+          example: 25
+
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener un usuario
+      description: >
+        Devuelve la información de un usuario concreto.
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    put:
+      tags:
+        - Usuarios
+      summary: Modificar un usuario
+      description: >
+        Modifica los datos del perfil de un usuario.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInput'
+
+      responses:
+        '200':
+          description: Usuario modificado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+
+        '400':
+          description: Datos no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: El correo electrónico ya está siendo utilizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    delete:
+      tags:
+        - Usuarios
+      summary: Eliminar un usuario
+      description: >
+        Elimina un usuario registrado en la plataforma.
+      responses:
+        '204':
+          description: Usuario eliminado correctamente
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /usuarios/{idUsuario}/perfil:
+    patch:
+      tags:
+        - Usuarios
+      summary: Actualizar el perfil
+      description: >
+        Permite modificar parcialmente los datos del perfil
+        de un usuario.
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 25
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizacionPerfil'
+
+      responses:
+        '200':
+          description: Perfil actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+
+        '400':
+          description: Datos no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /usuarios/{idUsuario}/foto:
+    put:
+      tags:
+        - Usuarios
+      summary: Actualizar foto de perfil
+      description: >
+        Permite establecer o modificar la foto de perfil de un usuario.
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 25
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FotoPerfil'
+
+      responses:
+        '200':
+          description: Foto actualizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+
+        '400':
+          description: Foto no válida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /usuarios/{idUsuario}/metodos-pago:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener métodos de pago
+      description: >
+        Devuelve los métodos de pago asociados a un usuario.
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 25
+
+      responses:
+        '200':
+          description: Métodos de pago obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetodoPago'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    post:
+      tags:
+        - Usuarios
+      summary: Añadir método de pago
+      description: >
+        Añade un nuevo método de pago al usuario.
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 25
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetodoPagoInput'
+
+      responses:
+        '201':
+          description: Método de pago añadido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetodoPago'
+
+        '400':
+          description: Datos del método de pago no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /usuarios/{idUsuario}/metodos-pago/{idMetodoPago}:
+    delete:
+      tags:
+        - Usuarios
+      summary: Eliminar método de pago
+      description: >
+        Elimina uno de los métodos de pago asociados al usuario.
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 25
+
+        - name: idMetodoPago
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 4
+
+      responses:
+        '204':
+          description: Método de pago eliminado correctamente
+
+        '404':
+          description: Usuario o método de pago no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /usuarios/{idUsuario}/tipo:
+    patch:
+      tags:
+        - Usuarios
+      summary: Modificar tipo de usuario
+      description: >
+        Permite modificar el tipo o rol asignado a un usuario.
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 25
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizacionTipo'
+
+      responses:
+        '200':
+          description: Tipo de usuario actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+
+        '400':
+          description: Tipo de usuario no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+components:
+
+  schemas:
+
+    Usuario:
+      type: object
+      description: Usuario registrado en Subsonic Festival
+      properties:
+        id:
+          type: integer
+          description: Identificador único del usuario
+          example: 25
+
+        nombre:
+          type: string
+          example: "Laura"
+
+        apellidos:
+          type: string
+          example: "García Sánchez"
+
+        email:
+          type: string
+          format: email
+          example: "laura@email.com"
+
+        telefono:
+          type: string
+          example: "600123456"
+
+        fechaNacimiento:
+          type: string
+          format: date
+          example: "2002-05-14"
+
+        tipo:
+          type: string
+          enum:
+            - cliente
+            - proveedor
+            - administrador
+          example: cliente
+
+        fotoPerfil:
+          type: string
+          nullable: true
+          description: URL de la foto de perfil
+          example: "/imagenes/perfiles/usuario25.jpg"
+
+        fechaRegistro:
+          type: string
+          format: date-time
+          example: "2027-04-10T12:30:00Z"
+
+      required:
+        - id
+        - nombre
+        - apellidos
+        - email
+        - tipo
+        - fechaRegistro
+
+
+    RegistroUsuario:
+      type: object
+      description: Datos necesarios para registrar un usuario
+      properties:
+        nombre:
+          type: string
+          example: "Laura"
+
+        apellidos:
+          type: string
+          example: "García Sánchez"
+
+        email:
+          type: string
+          format: email
+          example: "laura@email.com"
+
+        password:
+          type: string
+          format: password
+          example: "Subsonic123"
+
+        telefono:
+          type: string
+          example: "600123456"
+
+        fechaNacimiento:
+          type: string
+          format: date
+          example: "2002-05-14"
+
+        tipo:
+          type: string
+          enum:
+            - cliente
+            - proveedor
+          example: cliente
+
+      required:
+        - nombre
+        - apellidos
+        - email
+        - password
+        - tipo
+
+
+    UsuarioInput:
+      type: object
+      description: Datos para modificar un usuario
+      properties:
+        nombre:
+          type: string
+          example: "Laura"
+
+        apellidos:
+          type: string
+          example: "García Sánchez"
+
+        email:
+          type: string
+          format: email
+          example: "laura@email.com"
+
+        telefono:
+          type: string
+          example: "600123456"
+
+        fechaNacimiento:
+          type: string
+          format: date
+          example: "2002-05-14"
+
+      required:
+        - nombre
+        - apellidos
+        - email
+
+
+    ActualizacionPerfil:
+      type: object
+      description: Datos del perfil que pueden modificarse parcialmente
+      properties:
+        nombre:
+          type: string
+          example: "Laura"
+
+        apellidos:
+          type: string
+          example: "García Sánchez"
+
+        telefono:
+          type: string
+          example: "600123456"
+
+        fechaNacimiento:
+          type: string
+          format: date
+          example: "2002-05-14"
+
+
+    FotoPerfil:
+      type: object
+      description: Foto asociada al perfil de un usuario
+      properties:
+        url:
+          type: string
+          example: "/imagenes/perfiles/usuario25.jpg"
+
+      required:
+        - url
+
+
+    Login:
+      type: object
+      description: Credenciales necesarias para iniciar sesión
+      properties:
+        email:
+          type: string
+          format: email
+          example: "laura@email.com"
+
+        password:
+          type: string
+          format: password
+          example: "Subsonic123"
+
+      required:
+        - email
+        - password
+
+
+    Sesion:
+      type: object
+      description: Información devuelta después de iniciar sesión
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiJ9..."
+
+        tipo:
+          type: string
+          example: "Bearer"
+
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+
+      required:
+        - token
+        - tipo
+        - usuario
+
+
+    MetodoPago:
+      type: object
+      description: Método de pago asociado a un usuario
+      properties:
+        id:
+          type: integer
+          example: 4
+
+        tipo:
+          type: string
+          enum:
+            - tarjeta
+            - paypal
+          example: tarjeta
+
+        titular:
+          type: string
+          example: "Laura García Sánchez"
+
+        ultimosDigitos:
+          type: string
+          example: "4582"
+
+        predeterminado:
+          type: boolean
+          example: true
+
+      required:
+        - id
+        - tipo
+        - predeterminado
+
+
+    MetodoPagoInput:
+      type: object
+      description: Datos necesarios para añadir un método de pago
+      properties:
+        tipo:
+          type: string
+          enum:
+            - tarjeta
+            - paypal
+          example: tarjeta
+
+        titular:
+          type: string
+          example: "Laura García Sánchez"
+
+        numero:
+          type: string
+          example: "1234567812344582"
+
+        fechaCaducidad:
+          type: string
+          example: "12/29"
+
+        predeterminado:
+          type: boolean
+          example: true
+
+      required:
+        - tipo
+
+
+    ActualizacionTipo:
+      type: object
+      description: Nuevo tipo asignado al usuario
+      properties:
+        tipo:
+          type: string
+          enum:
+            - cliente
+            - proveedor
+            - administrador
+          example: proveedor
+
+      required:
+        - tipo
+
+
+    Error:
+      type: object
+      description: Información sobre un error producido en la API
+      properties:
+        codigo:
+          type: integer
+          example: 404
+
+        mensaje:
+          type: string
+          example: "Usuario no encontrado"
+
+      required:
+        - codigo
+        - mensaje
