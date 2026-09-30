@@ -1,0 +1,790 @@
+openapi: 3.0.3
+
+info:
+  title: API Estadísticas y Recomendaciones - Subsonic Festival
+  description: >
+    API encargada de generar y consultar estadísticas relacionadas
+    con el funcionamiento de Subsonic Festival, así como de proporcionar
+    recomendaciones a los usuarios a partir de la información disponible.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Servidor local
+
+tags:
+  - name: Estadisticas
+    description: Consulta de estadísticas del festival
+
+  - name: Recomendaciones
+    description: Generación de recomendaciones para los usuarios
+
+
+paths:
+
+  /estadisticas/resumen:
+    get:
+      tags:
+        - Estadisticas
+      summary: Obtener resumen general del festival
+      description: >
+        Devuelve un resumen con los principales datos estadísticos
+        del festival, como usuarios registrados, entradas vendidas,
+        ingresos y número de actuaciones.
+
+      responses:
+        '200':
+          description: Resumen obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenGeneral'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /estadisticas/entradas:
+    get:
+      tags:
+        - Estadisticas
+      summary: Obtener estadísticas de entradas
+      description: >
+        Devuelve información estadística sobre las entradas
+        vendidas para el festival.
+
+      parameters:
+        - name: fechaInicio
+          in: query
+          required: false
+          description: Fecha inicial del periodo
+          schema:
+            type: string
+            format: date
+            example: "2027-01-01"
+
+        - name: fechaFin
+          in: query
+          required: false
+          description: Fecha final del periodo
+          schema:
+            type: string
+            format: date
+            example: "2027-07-16"
+
+      responses:
+        '200':
+          description: Estadísticas obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadisticasEntradas'
+
+        '400':
+          description: Periodo de fechas no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /estadisticas/ingresos:
+    get:
+      tags:
+        - Estadisticas
+      summary: Obtener estadísticas de ingresos
+      description: >
+        Devuelve los ingresos obtenidos por las distintas
+        actividades y servicios de Subsonic Festival.
+
+      parameters:
+        - name: fechaInicio
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2027-01-01"
+
+        - name: fechaFin
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2027-07-20"
+
+      responses:
+        '200':
+          description: Estadísticas de ingresos obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadisticasIngresos'
+
+        '400':
+          description: Periodo de fechas no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /estadisticas/usuarios:
+    get:
+      tags:
+        - Estadisticas
+      summary: Obtener estadísticas de usuarios
+      description: >
+        Devuelve información sobre los usuarios registrados
+        en la plataforma y su distribución por tipo.
+
+      responses:
+        '200':
+          description: Estadísticas de usuarios obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadisticasUsuarios'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /estadisticas/espacios:
+    get:
+      tags:
+        - Estadisticas
+      summary: Obtener estadísticas de uso de espacios
+      description: >
+        Devuelve información sobre la utilización de los diferentes
+        espacios del festival.
+
+      responses:
+        '200':
+          description: Estadísticas de espacios obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsoEspacio'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /estadisticas/artistas:
+    get:
+      tags:
+        - Estadisticas
+      summary: Obtener estadísticas de artistas
+      description: >
+        Devuelve información estadística relacionada con los
+        artistas y sus actuaciones en el festival.
+
+      responses:
+        '200':
+          description: Estadísticas de artistas obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EstadisticaArtista'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /estadisticas/merchandising:
+    get:
+      tags:
+        - Estadisticas
+      summary: Obtener estadísticas de merchandising
+      description: >
+        Devuelve información sobre las ventas de productos
+        de merchandising del festival.
+
+      responses:
+        '200':
+          description: Estadísticas obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadisticasMerchandising'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /estadisticas/ventas-por-dia:
+    get:
+      tags:
+        - Estadisticas
+      summary: Obtener ventas agrupadas por día
+      description: >
+        Devuelve el número de ventas y los ingresos obtenidos
+        durante cada día del periodo indicado.
+
+      parameters:
+        - name: fechaInicio
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2027-07-14"
+
+        - name: fechaFin
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2027-07-18"
+
+      responses:
+        '200':
+          description: Ventas obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VentasDia'
+
+        '400':
+          description: Periodo de fechas no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /recomendaciones/{idUsuario}:
+    get:
+      tags:
+        - Recomendaciones
+      summary: Obtener recomendaciones para un usuario
+      description: >
+        Devuelve recomendaciones personalizadas de actuaciones
+        para un usuario.
+
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          description: Identificador del usuario
+          schema:
+            type: integer
+            example: 25
+
+      responses:
+        '200':
+          description: Recomendaciones obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recomendacion'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /recomendaciones/{idUsuario}/artistas:
+    get:
+      tags:
+        - Recomendaciones
+      summary: Recomendar artistas a un usuario
+      description: >
+        Devuelve artistas del festival que pueden resultar
+        de interés para un usuario.
+
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 25
+
+      responses:
+        '200':
+          description: Artistas recomendados obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecomendacionArtista'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /recomendaciones/populares:
+    get:
+      tags:
+        - Recomendaciones
+      summary: Obtener actuaciones populares
+      description: >
+        Devuelve las actuaciones con mayor interés entre
+        los usuarios del festival.
+
+      responses:
+        '200':
+          description: Actuaciones populares obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActuacionPopular'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+components:
+
+  schemas:
+
+    ResumenGeneral:
+      type: object
+      description: Resumen de los principales datos del festival
+      properties:
+        totalUsuarios:
+          type: integer
+          example: 18500
+
+        entradasVendidas:
+          type: integer
+          example: 14200
+
+        ingresosTotales:
+          type: number
+          format: double
+          example: 852430.50
+
+        totalActuaciones:
+          type: integer
+          example: 42
+
+        totalArtistas:
+          type: integer
+          example: 35
+
+        totalEspacios:
+          type: integer
+          example: 12
+
+        productosVendidos:
+          type: integer
+          example: 3250
+
+      required:
+        - totalUsuarios
+        - entradasVendidas
+        - ingresosTotales
+        - totalActuaciones
+        - totalArtistas
+        - totalEspacios
+
+
+    EstadisticasEntradas:
+      type: object
+      description: Información estadística sobre la venta de entradas
+      properties:
+        totalVendidas:
+          type: integer
+          example: 14200
+
+        entradasGenerales:
+          type: integer
+          example: 9500
+
+        entradasVIP:
+          type: integer
+          example: 2200
+
+        abonos:
+          type: integer
+          example: 2500
+
+        ingresos:
+          type: number
+          format: double
+          example: 710000.00
+
+        porcentajeVendido:
+          type: number
+          format: double
+          example: 78.9
+
+      required:
+        - totalVendidas
+        - ingresos
+        - porcentajeVendido
+
+
+    EstadisticasIngresos:
+      type: object
+      description: Distribución de los ingresos del festival
+      properties:
+        ingresosTotales:
+          type: number
+          format: double
+          example: 852430.50
+
+        ingresosEntradas:
+          type: number
+          format: double
+          example: 710000.00
+
+        ingresosMerchandising:
+          type: number
+          format: double
+          example: 98430.50
+
+        ingresosServicios:
+          type: number
+          format: double
+          example: 44000.00
+
+      required:
+        - ingresosTotales
+        - ingresosEntradas
+        - ingresosMerchandising
+        - ingresosServicios
+
+
+    EstadisticasUsuarios:
+      type: object
+      description: Estadísticas de los usuarios de la plataforma
+      properties:
+        totalUsuarios:
+          type: integer
+          example: 18500
+
+        clientes:
+          type: integer
+          example: 18250
+
+        proveedores:
+          type: integer
+          example: 220
+
+        administradores:
+          type: integer
+          example: 30
+
+        nuevosUsuarios:
+          type: integer
+          description: Usuarios registrados durante el periodo actual
+          example: 1250
+
+      required:
+        - totalUsuarios
+        - clientes
+        - proveedores
+        - administradores
+
+
+    UsoEspacio:
+      type: object
+      description: Estadísticas de utilización de un espacio
+      properties:
+        idEspacio:
+          type: integer
+          example: 3
+
+        nombreEspacio:
+          type: string
+          example: "Escenario Principal"
+
+        numeroEventos:
+          type: integer
+          example: 12
+
+        horasUso:
+          type: number
+          format: double
+          example: 26.5
+
+        porcentajeUso:
+          type: number
+          format: double
+          example: 82.5
+
+      required:
+        - idEspacio
+        - nombreEspacio
+        - numeroEventos
+        - horasUso
+        - porcentajeUso
+
+
+    EstadisticaArtista:
+      type: object
+      description: Información estadística de un artista
+      properties:
+        idArtista:
+          type: integer
+          example: 8
+
+        nombreArtista:
+          type: string
+          example: "Arde Bogotá"
+
+        numeroActuaciones:
+          type: integer
+          example: 2
+
+        nivelPopularidad:
+          type: number
+          format: double
+          example: 87.5
+
+      required:
+        - idArtista
+        - nombreArtista
+        - numeroActuaciones
+
+
+    EstadisticasMerchandising:
+      type: object
+      description: Estadísticas de ventas de merchandising
+      properties:
+        productosVendidos:
+          type: integer
+          example: 3250
+
+        ingresos:
+          type: number
+          format: double
+          example: 98430.50
+
+        productoMasVendido:
+          type: string
+          example: "Camiseta oficial Subsonic 2027"
+
+        unidadesProductoMasVendido:
+          type: integer
+          example: 850
+
+      required:
+        - productosVendidos
+        - ingresos
+
+
+    VentasDia:
+      type: object
+      description: Ventas realizadas durante un día
+      properties:
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        numeroVentas:
+          type: integer
+          example: 1340
+
+        ingresos:
+          type: number
+          format: double
+          example: 67450.00
+
+      required:
+        - fecha
+        - numeroVentas
+        - ingresos
+
+
+    Recomendacion:
+      type: object
+      description: Actuación recomendada a un usuario
+      properties:
+        idActuacion:
+          type: integer
+          example: 12
+
+        artista:
+          type: string
+          example: "Arde Bogotá"
+
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        hora:
+          type: string
+          format: time
+          example: "21:30:00"
+
+        idEspacio:
+          type: integer
+          example: 3
+
+        motivo:
+          type: string
+          example: "Relacionado con tus artistas de interés"
+
+      required:
+        - idActuacion
+        - artista
+        - fecha
+        - hora
+        - idEspacio
+
+
+    RecomendacionArtista:
+      type: object
+      description: Artista recomendado a un usuario
+      properties:
+        idArtista:
+          type: integer
+          example: 8
+
+        nombre:
+          type: string
+          example: "Arde Bogotá"
+
+        genero:
+          type: string
+          example: "Rock alternativo"
+
+        motivo:
+          type: string
+          example: "Similar a otros artistas consultados"
+
+      required:
+        - idArtista
+        - nombre
+
+
+    ActuacionPopular:
+      type: object
+      description: Actuación con mayor interés entre los usuarios
+      properties:
+        idActuacion:
+          type: integer
+          example: 12
+
+        artista:
+          type: string
+          example: "Arde Bogotá"
+
+        idEspacio:
+          type: integer
+          example: 3
+
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        hora:
+          type: string
+          format: time
+          example: "21:30:00"
+
+        popularidad:
+          type: number
+          format: double
+          example: 92.4
+
+      required:
+        - idActuacion
+        - artista
+        - fecha
+        - hora
+        - popularidad
+
+
+    Error:
+      type: object
+      description: Información sobre un error producido en la API
+      properties:
+        codigo:
+          type: integer
+          example: 404
+
+        mensaje:
+          type: string
+          example: "No se han encontrado datos"
+
+      required:
+        - codigo
+        - mensaje
