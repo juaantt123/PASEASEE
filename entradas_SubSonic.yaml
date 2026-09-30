@@ -1,0 +1,817 @@
+openapi: 3.0.3
+
+info:
+  title: API Entradas - Subsonic Festival
+  description: >
+    API encargada de gestionar las entradas de Subsonic Festival.
+    Permite consultar los tipos de entrada disponibles, realizar compras,
+    consultar las entradas de los usuarios, cancelar entradas y validar
+    el acceso al festival.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Servidor local
+
+tags:
+  - name: Entradas
+    description: Gestión de las entradas del festival
+
+  - name: Compras
+    description: Gestión de la compra de entradas
+
+  - name: Validacion
+    description: Control y validación de las entradas
+
+
+paths:
+
+  /entradas:
+    get:
+      tags:
+        - Entradas
+      summary: Obtener los tipos de entrada
+      description: >
+        Devuelve todos los tipos de entrada disponibles para
+        Subsonic Festival.
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          description: Filtrar entradas según su disponibilidad
+          schema:
+            type: string
+            enum:
+              - disponible
+              - agotada
+            example: disponible
+
+      responses:
+        '200':
+          description: Tipos de entrada obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TipoEntrada'
+
+        '400':
+          description: Parámetro de búsqueda no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    post:
+      tags:
+        - Entradas
+      summary: Crear un tipo de entrada
+      description: >
+        Crea un nuevo tipo de entrada para el festival.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoEntradaInput'
+
+      responses:
+        '201':
+          description: Tipo de entrada creado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoEntrada'
+
+        '400':
+          description: Datos de la entrada no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: Ya existe un tipo de entrada con esos datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /entradas/{idTipoEntrada}:
+    parameters:
+      - name: idTipoEntrada
+        in: path
+        required: true
+        description: Identificador del tipo de entrada
+        schema:
+          type: integer
+          example: 2
+
+    get:
+      tags:
+        - Entradas
+      summary: Obtener un tipo de entrada
+      description: >
+        Devuelve la información de un tipo de entrada concreto.
+
+      responses:
+        '200':
+          description: Entrada encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoEntrada'
+
+        '404':
+          description: Tipo de entrada no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    put:
+      tags:
+        - Entradas
+      summary: Modificar un tipo de entrada
+      description: >
+        Modifica los datos de un tipo de entrada existente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoEntradaInput'
+
+      responses:
+        '200':
+          description: Tipo de entrada modificado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoEntrada'
+
+        '400':
+          description: Datos no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Tipo de entrada no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    delete:
+      tags:
+        - Entradas
+      summary: Eliminar un tipo de entrada
+      description: >
+        Elimina un tipo de entrada siempre que no existan
+        compras asociadas.
+
+      responses:
+        '204':
+          description: Tipo de entrada eliminado correctamente
+
+        '404':
+          description: Tipo de entrada no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: >
+            No se puede eliminar porque existen entradas vendidas
+            de este tipo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /entradas/disponibles:
+    get:
+      tags:
+        - Entradas
+      summary: Obtener entradas disponibles
+      description: >
+        Devuelve los tipos de entrada que todavía disponen
+        de unidades para su venta.
+
+      responses:
+        '200':
+          description: Entradas disponibles obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TipoEntrada'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /entradas/comprar:
+    post:
+      tags:
+        - Compras
+      summary: Comprar entradas
+      description: >
+        Permite a un usuario realizar la compra de una o varias
+        entradas para Subsonic Festival.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompraEntradaInput'
+
+      responses:
+        '201':
+          description: Compra realizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompraEntrada'
+
+        '400':
+          description: Datos de compra no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Usuario o tipo de entrada no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: No quedan suficientes entradas disponibles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /entradas/usuarios/{idUsuario}:
+    get:
+      tags:
+        - Entradas
+      summary: Obtener entradas de un usuario
+      description: >
+        Devuelve todas las entradas compradas por un usuario.
+
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          description: Identificador del usuario
+          schema:
+            type: integer
+            example: 25
+
+      responses:
+        '200':
+          description: Entradas del usuario obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntradaUsuario'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /entradas/compras/{idCompra}:
+    get:
+      tags:
+        - Compras
+      summary: Consultar una compra
+      description: >
+        Devuelve los datos de una compra de entradas concreta.
+
+      parameters:
+        - name: idCompra
+          in: path
+          required: true
+          description: Identificador de la compra
+          schema:
+            type: integer
+            example: 158
+
+      responses:
+        '200':
+          description: Compra encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompraEntrada'
+
+        '404':
+          description: Compra no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /entradas/{idEntrada}/cancelar:
+    patch:
+      tags:
+        - Entradas
+      summary: Cancelar una entrada
+      description: >
+        Cancela una entrada adquirida por un usuario.
+
+      parameters:
+        - name: idEntrada
+          in: path
+          required: true
+          description: Identificador de la entrada comprada
+          schema:
+            type: integer
+            example: 4589
+
+      responses:
+        '200':
+          description: Entrada cancelada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntradaUsuario'
+
+        '404':
+          description: Entrada no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: La entrada no puede ser cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /entradas/{idEntrada}/validar:
+    post:
+      tags:
+        - Validacion
+      summary: Validar una entrada
+      description: >
+        Comprueba una entrada durante el acceso al festival y,
+        si es válida, la marca como utilizada.
+
+      parameters:
+        - name: idEntrada
+          in: path
+          required: true
+          description: Identificador de la entrada
+          schema:
+            type: integer
+            example: 4589
+
+      responses:
+        '200':
+          description: Entrada validada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidacionEntrada'
+
+        '404':
+          description: Entrada no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: Entrada cancelada o utilizada anteriormente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /entradas/{idEntrada}/estado:
+    get:
+      tags:
+        - Entradas
+      summary: Consultar estado de una entrada
+      description: >
+        Devuelve el estado actual de una entrada comprada.
+
+      parameters:
+        - name: idEntrada
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 4589
+
+      responses:
+        '200':
+          description: Estado obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoEntrada'
+
+        '404':
+          description: Entrada no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+components:
+
+  schemas:
+
+    TipoEntrada:
+      type: object
+      description: Tipo de entrada disponible para el festival
+      properties:
+        id:
+          type: integer
+          example: 2
+
+        nombre:
+          type: string
+          example: "Abono completo"
+
+        descripcion:
+          type: string
+          example: "Acceso al festival durante todos los días"
+
+        precio:
+          type: number
+          format: double
+          minimum: 0
+          example: 89.99
+
+        stockTotal:
+          type: integer
+          minimum: 0
+          example: 10000
+
+        stockDisponible:
+          type: integer
+          minimum: 0
+          example: 2450
+
+        fechaInicioValidez:
+          type: string
+          format: date
+          example: "2027-07-15"
+
+        fechaFinValidez:
+          type: string
+          format: date
+          example: "2027-07-18"
+
+        estado:
+          type: string
+          enum:
+            - disponible
+            - agotada
+          example: disponible
+
+      required:
+        - id
+        - nombre
+        - precio
+        - stockTotal
+        - stockDisponible
+        - estado
+
+
+    TipoEntradaInput:
+      type: object
+      description: Datos necesarios para crear o modificar un tipo de entrada
+      properties:
+        nombre:
+          type: string
+          example: "Entrada viernes"
+
+        descripcion:
+          type: string
+          example: "Acceso al festival durante el viernes"
+
+        precio:
+          type: number
+          format: double
+          minimum: 0
+          example: 39.99
+
+        stockTotal:
+          type: integer
+          minimum: 1
+          example: 5000
+
+        fechaInicioValidez:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        fechaFinValidez:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+      required:
+        - nombre
+        - precio
+        - stockTotal
+        - fechaInicioValidez
+        - fechaFinValidez
+
+
+    CompraEntradaInput:
+      type: object
+      description: Datos necesarios para realizar una compra
+      properties:
+        idUsuario:
+          type: integer
+          example: 25
+
+        idTipoEntrada:
+          type: integer
+          example: 2
+
+        cantidad:
+          type: integer
+          minimum: 1
+          example: 2
+
+        idMetodoPago:
+          type: integer
+          example: 4
+
+      required:
+        - idUsuario
+        - idTipoEntrada
+        - cantidad
+        - idMetodoPago
+
+
+    CompraEntrada:
+      type: object
+      description: Información de una compra de entradas
+      properties:
+        idCompra:
+          type: integer
+          example: 158
+
+        idUsuario:
+          type: integer
+          example: 25
+
+        idTipoEntrada:
+          type: integer
+          example: 2
+
+        cantidad:
+          type: integer
+          example: 2
+
+        precioTotal:
+          type: number
+          format: double
+          example: 179.98
+
+        fechaCompra:
+          type: string
+          format: date-time
+          example: "2027-05-10T17:45:00Z"
+
+        estado:
+          type: string
+          enum:
+            - completada
+            - cancelada
+          example: completada
+
+      required:
+        - idCompra
+        - idUsuario
+        - idTipoEntrada
+        - cantidad
+        - precioTotal
+        - fechaCompra
+        - estado
+
+
+    EntradaUsuario:
+      type: object
+      description: Entrada individual adquirida por un usuario
+      properties:
+        idEntrada:
+          type: integer
+          example: 4589
+
+        idUsuario:
+          type: integer
+          example: 25
+
+        idTipoEntrada:
+          type: integer
+          example: 2
+
+        nombre:
+          type: string
+          example: "Abono completo"
+
+        codigo:
+          type: string
+          example: "SUB-2027-004589"
+
+        fechaCompra:
+          type: string
+          format: date-time
+          example: "2027-05-10T17:45:00Z"
+
+        estado:
+          type: string
+          enum:
+            - valida
+            - utilizada
+            - cancelada
+          example: valida
+
+      required:
+        - idEntrada
+        - idUsuario
+        - idTipoEntrada
+        - codigo
+        - estado
+
+
+    ValidacionEntrada:
+      type: object
+      description: Resultado de la validación de una entrada
+      properties:
+        idEntrada:
+          type: integer
+          example: 4589
+
+        valida:
+          type: boolean
+          example: true
+
+        fechaValidacion:
+          type: string
+          format: date-time
+          example: "2027-07-16T18:25:00Z"
+
+        mensaje:
+          type: string
+          example: "Entrada válida. Acceso permitido."
+
+      required:
+        - idEntrada
+        - valida
+        - mensaje
+
+
+    EstadoEntrada:
+      type: object
+      description: Estado actual de una entrada
+      properties:
+        idEntrada:
+          type: integer
+          example: 4589
+
+        estado:
+          type: string
+          enum:
+            - valida
+            - utilizada
+            - cancelada
+          example: valida
+
+      required:
+        - idEntrada
+        - estado
+
+
+    Error:
+      type: object
+      description: Información sobre un error producido en la API
+      properties:
+        codigo:
+          type: integer
+          example: 404
+
+        mensaje:
+          type: string
+          example: "Entrada no encontrada"
+
+      required:
+        - codigo
+        - mensaje
