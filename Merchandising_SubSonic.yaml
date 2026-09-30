@@ -1,0 +1,795 @@
+openapi: 3.0.3
+
+info:
+  title: API Merchandising - Subsonic Festival
+  description: >
+    API encargada de gestionar los productos de merchandising
+    de Subsonic Festival, incluyendo el catálogo de productos,
+    el stock disponible y las compras realizadas por los usuarios.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Servidor local
+
+tags:
+  - name: Productos
+    description: Gestión de productos de merchandising
+
+  - name: Compras
+    description: Gestión de compras de merchandising
+
+  - name: Stock
+    description: Gestión del stock de productos
+
+
+paths:
+
+  /merchandising:
+    get:
+      tags:
+        - Productos
+      summary: Obtener productos de merchandising
+      description: >
+        Devuelve todos los productos de merchandising disponibles.
+        Permite filtrar los productos por categoría y disponibilidad.
+
+      parameters:
+        - name: categoria
+          in: query
+          required: false
+          description: Categoría del producto
+          schema:
+            type: string
+            enum:
+              - camiseta
+              - sudadera
+              - accesorio
+              - poster
+              - otros
+            example: camiseta
+
+        - name: disponible
+          in: query
+          required: false
+          description: Indica si se quieren mostrar únicamente productos disponibles
+          schema:
+            type: boolean
+            example: true
+
+      responses:
+        '200':
+          description: Productos obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Producto'
+
+        '400':
+          description: Parámetros de búsqueda no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    post:
+      tags:
+        - Productos
+      summary: Crear un producto
+      description: >
+        Añade un nuevo producto al catálogo de merchandising
+        de Subsonic Festival.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoInput'
+
+      responses:
+        '201':
+          description: Producto creado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+
+        '400':
+          description: Datos del producto no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: Ya existe un producto con esos datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /merchandising/{idProducto}:
+    parameters:
+      - name: idProducto
+        in: path
+        required: true
+        description: Identificador del producto
+        schema:
+          type: integer
+          example: 15
+
+    get:
+      tags:
+        - Productos
+      summary: Obtener un producto
+      description: >
+        Devuelve la información de un producto de merchandising concreto.
+
+      responses:
+        '200':
+          description: Producto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    put:
+      tags:
+        - Productos
+      summary: Modificar un producto
+      description: >
+        Modifica los datos de un producto existente.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoInput'
+
+      responses:
+        '200':
+          description: Producto modificado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+
+        '400':
+          description: Datos del producto no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    delete:
+      tags:
+        - Productos
+      summary: Eliminar un producto
+      description: >
+        Elimina un producto del catálogo de merchandising.
+
+      responses:
+        '204':
+          description: Producto eliminado correctamente
+
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: El producto no puede eliminarse porque tiene compras asociadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /merchandising/disponibles:
+    get:
+      tags:
+        - Productos
+      summary: Obtener productos disponibles
+      description: >
+        Devuelve los productos que tienen unidades disponibles
+        para su compra.
+
+      responses:
+        '200':
+          description: Productos disponibles obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Producto'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /merchandising/{idProducto}/stock:
+    get:
+      tags:
+        - Stock
+      summary: Consultar stock de un producto
+      description: >
+        Devuelve el número de unidades disponibles de un producto.
+
+      parameters:
+        - name: idProducto
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 15
+
+      responses:
+        '200':
+          description: Stock obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    patch:
+      tags:
+        - Stock
+      summary: Actualizar stock de un producto
+      description: >
+        Permite modificar el número de unidades disponibles
+        de un producto.
+
+      parameters:
+        - name: idProducto
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 15
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizacionStock'
+
+      responses:
+        '200':
+          description: Stock actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+
+        '400':
+          description: Cantidad de stock no válida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /merchandising/compras:
+    post:
+      tags:
+        - Compras
+      summary: Comprar merchandising
+      description: >
+        Permite a un usuario realizar la compra de uno o varios
+        productos de merchandising.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompraMerchandisingInput'
+
+      responses:
+        '201':
+          description: Compra realizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompraMerchandising'
+
+        '400':
+          description: Datos de compra no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Usuario o producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: No hay suficiente stock disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /merchandising/compras/{idCompra}:
+    get:
+      tags:
+        - Compras
+      summary: Consultar una compra
+      description: >
+        Devuelve los datos de una compra de merchandising.
+
+      parameters:
+        - name: idCompra
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 245
+
+      responses:
+        '200':
+          description: Compra obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompraMerchandising'
+
+        '404':
+          description: Compra no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /merchandising/usuarios/{idUsuario}/compras:
+    get:
+      tags:
+        - Compras
+      summary: Obtener compras de un usuario
+      description: >
+        Devuelve todas las compras de merchandising realizadas
+        por un usuario.
+
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          description: Identificador del usuario
+          schema:
+            type: integer
+            example: 25
+
+      responses:
+        '200':
+          description: Compras obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompraMerchandising'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /merchandising/compras/{idCompra}/cancelar:
+    patch:
+      tags:
+        - Compras
+      summary: Cancelar una compra
+      description: >
+        Permite cancelar una compra de merchandising
+        siempre que todavía pueda ser cancelada.
+
+      parameters:
+        - name: idCompra
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 245
+
+      responses:
+        '200':
+          description: Compra cancelada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompraMerchandising'
+
+        '404':
+          description: Compra no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: La compra no puede ser cancelada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+components:
+
+  schemas:
+
+    Producto:
+      type: object
+      description: Producto de merchandising de Subsonic Festival
+      properties:
+        id:
+          type: integer
+          description: Identificador único del producto
+          example: 15
+
+        nombre:
+          type: string
+          example: "Camiseta Subsonic 2027"
+
+        descripcion:
+          type: string
+          example: "Camiseta oficial de Subsonic Festival 2027"
+
+        categoria:
+          type: string
+          enum:
+            - camiseta
+            - sudadera
+            - accesorio
+            - poster
+            - otros
+          example: camiseta
+
+        precio:
+          type: number
+          format: double
+          minimum: 0
+          example: 24.99
+
+        stock:
+          type: integer
+          minimum: 0
+          example: 350
+
+        imagen:
+          type: string
+          example: "/imagenes/merchandising/camiseta2027.jpg"
+
+        disponible:
+          type: boolean
+          example: true
+
+      required:
+        - id
+        - nombre
+        - categoria
+        - precio
+        - stock
+        - disponible
+
+
+    ProductoInput:
+      type: object
+      description: Datos necesarios para crear o modificar un producto
+      properties:
+        nombre:
+          type: string
+          example: "Camiseta Subsonic 2027"
+
+        descripcion:
+          type: string
+          example: "Camiseta oficial del festival"
+
+        categoria:
+          type: string
+          enum:
+            - camiseta
+            - sudadera
+            - accesorio
+            - poster
+            - otros
+          example: camiseta
+
+        precio:
+          type: number
+          format: double
+          minimum: 0
+          example: 24.99
+
+        stock:
+          type: integer
+          minimum: 0
+          example: 350
+
+        imagen:
+          type: string
+          example: "/imagenes/merchandising/camiseta2027.jpg"
+
+      required:
+        - nombre
+        - categoria
+        - precio
+        - stock
+
+
+    Stock:
+      type: object
+      description: Información de stock de un producto
+      properties:
+        idProducto:
+          type: integer
+          example: 15
+
+        stock:
+          type: integer
+          minimum: 0
+          example: 350
+
+        disponible:
+          type: boolean
+          example: true
+
+      required:
+        - idProducto
+        - stock
+        - disponible
+
+
+    ActualizacionStock:
+      type: object
+      description: Nuevo stock disponible para un producto
+      properties:
+        stock:
+          type: integer
+          minimum: 0
+          example: 400
+
+      required:
+        - stock
+
+
+    CompraMerchandisingInput:
+      type: object
+      description: Datos necesarios para comprar un producto
+      properties:
+        idUsuario:
+          type: integer
+          example: 25
+
+        idProducto:
+          type: integer
+          example: 15
+
+        cantidad:
+          type: integer
+          minimum: 1
+          example: 2
+
+        talla:
+          type: string
+          nullable: true
+          enum:
+            - XS
+            - S
+            - M
+            - L
+            - XL
+            - XXL
+          example: M
+
+        idMetodoPago:
+          type: integer
+          example: 4
+
+      required:
+        - idUsuario
+        - idProducto
+        - cantidad
+        - idMetodoPago
+
+
+    CompraMerchandising:
+      type: object
+      description: Compra de merchandising realizada por un usuario
+      properties:
+        idCompra:
+          type: integer
+          example: 245
+
+        idUsuario:
+          type: integer
+          example: 25
+
+        idProducto:
+          type: integer
+          example: 15
+
+        cantidad:
+          type: integer
+          example: 2
+
+        talla:
+          type: string
+          nullable: true
+          example: M
+
+        precioTotal:
+          type: number
+          format: double
+          example: 49.98
+
+        fechaCompra:
+          type: string
+          format: date-time
+          example: "2027-07-10T16:35:00Z"
+
+        estado:
+          type: string
+          enum:
+            - realizada
+            - preparada
+            - entregada
+            - cancelada
+          example: realizada
+
+      required:
+        - idCompra
+        - idUsuario
+        - idProducto
+        - cantidad
+        - precioTotal
+        - fechaCompra
+        - estado
+
+
+    Error:
+      type: object
+      description: Información sobre un error producido en la API
+      properties:
+        codigo:
+          type: integer
+          example: 404
+
+        mensaje:
+          type: string
+          example: "Producto no encontrado"
+
+      required:
+        - codigo
+        - mensaje
