@@ -1,0 +1,734 @@
+openapi: 3.0.3
+
+info:
+  title: API Escaleta - Subsonic Festival
+  description: >
+    API encargada de gestionar la escaleta del festival Subsonic.
+    Permite administrar las actuaciones o pases, sus horarios,
+    los artistas participantes y los espacios donde se realizan.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Servidor local
+
+tags:
+  - name: Escaleta
+    description: Gestión de la programación del festival
+
+paths:
+
+  /escaleta:
+    get:
+      tags:
+        - Escaleta
+      summary: Obtener la escaleta
+      description: >
+        Devuelve todas las actuaciones programadas en el festival.
+        Se puede filtrar la escaleta por fecha, espacio o artista.
+      parameters:
+        - name: fecha
+          in: query
+          required: false
+          description: Fecha por la que se quiere filtrar la escaleta
+          schema:
+            type: string
+            format: date
+            example: "2027-07-16"
+
+        - name: idEspacio
+          in: query
+          required: false
+          description: Identificador del espacio
+          schema:
+            type: integer
+            example: 3
+
+        - name: idArtista
+          in: query
+          required: false
+          description: Identificador del artista
+          schema:
+            type: integer
+            example: 8
+
+      responses:
+        '200':
+          description: Escaleta obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Actuacion'
+
+        '400':
+          description: Parámetros de búsqueda no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Escaleta
+      summary: Crear una actuación
+      description: >
+        Añade una nueva actuación o pase a la escaleta del festival.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActuacionInput'
+
+      responses:
+        '201':
+          description: Actuación creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actuacion'
+
+        '400':
+          description: Datos de la actuación no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: Conflicto de horario en el espacio seleccionado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /escaleta/{idActuacion}:
+    parameters:
+      - name: idActuacion
+        in: path
+        required: true
+        description: Identificador de la actuación
+        schema:
+          type: integer
+          example: 12
+
+    get:
+      tags:
+        - Escaleta
+      summary: Obtener una actuación
+      description: >
+        Devuelve la información de una actuación concreta de la escaleta.
+      responses:
+        '200':
+          description: Actuación encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actuacion'
+
+        '404':
+          description: Actuación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Escaleta
+      summary: Modificar una actuación
+      description: >
+        Modifica todos los datos de una actuación existente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActuacionInput'
+
+      responses:
+        '200':
+          description: Actuación modificada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actuacion'
+
+        '400':
+          description: Datos no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Actuación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: Conflicto con otra actuación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Escaleta
+      summary: Eliminar una actuación
+      description: >
+        Elimina una actuación de la escaleta del festival.
+      responses:
+        '204':
+          description: Actuación eliminada correctamente
+
+        '404':
+          description: Actuación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /escaleta/dia/{fecha}:
+    get:
+      tags:
+        - Escaleta
+      summary: Obtener actuaciones por día
+      description: >
+        Devuelve todas las actuaciones programadas para una fecha concreta.
+      parameters:
+        - name: fecha
+          in: path
+          required: true
+          description: Fecha del festival
+          schema:
+            type: string
+            format: date
+            example: "2027-07-16"
+
+      responses:
+        '200':
+          description: Actuaciones obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Actuacion'
+
+        '400':
+          description: Fecha no válida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /escaleta/espacio/{idEspacio}:
+    get:
+      tags:
+        - Escaleta
+      summary: Obtener actuaciones por espacio
+      description: >
+        Devuelve las actuaciones programadas en un espacio o escenario.
+      parameters:
+        - name: idEspacio
+          in: path
+          required: true
+          description: Identificador del espacio
+          schema:
+            type: integer
+            example: 3
+
+      responses:
+        '200':
+          description: Actuaciones obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Actuacion'
+
+        '404':
+          description: Espacio no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /escaleta/artista/{idArtista}:
+    get:
+      tags:
+        - Escaleta
+      summary: Obtener actuaciones de un artista
+      description: >
+        Devuelve todas las actuaciones programadas para un artista.
+      parameters:
+        - name: idArtista
+          in: path
+          required: true
+          description: Identificador del artista
+          schema:
+            type: integer
+            example: 8
+
+      responses:
+        '200':
+          description: Actuaciones obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Actuacion'
+
+        '404':
+          description: Artista no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /escaleta/proximas:
+    get:
+      tags:
+        - Escaleta
+      summary: Obtener próximas actuaciones
+      description: >
+        Devuelve las próximas actuaciones del festival ordenadas
+        cronológicamente.
+
+      responses:
+        '200':
+          description: Próximas actuaciones obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Actuacion'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /escaleta/{idActuacion}/horario:
+    patch:
+      tags:
+        - Escaleta
+      summary: Modificar el horario de una actuación
+      description: >
+        Permite cambiar la fecha o las horas de una actuación
+        sin modificar el resto de sus datos.
+
+      parameters:
+        - name: idActuacion
+          in: path
+          required: true
+          description: Identificador de la actuación
+          schema:
+            type: integer
+            example: 12
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizacionHorario'
+
+      responses:
+        '200':
+          description: Horario actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actuacion'
+
+        '400':
+          description: Horario no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Actuación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: Conflicto con otra actuación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /escaleta/{idActuacion}/espacio:
+    patch:
+      tags:
+        - Escaleta
+      summary: Cambiar el espacio de una actuación
+      description: >
+        Permite asignar una actuación a otro espacio o escenario.
+
+      parameters:
+        - name: idActuacion
+          in: path
+          required: true
+          description: Identificador de la actuación
+          schema:
+            type: integer
+            example: 12
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizacionEspacio'
+
+      responses:
+        '200':
+          description: Espacio actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actuacion'
+
+        '400':
+          description: Datos no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Actuación o espacio no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: El espacio está ocupado en ese horario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /escaleta/conflictos:
+    get:
+      tags:
+        - Escaleta
+      summary: Consultar conflictos de programación
+      description: >
+        Devuelve posibles conflictos existentes en la escaleta,
+        como actuaciones asignadas al mismo espacio en horarios
+        incompatibles.
+
+      responses:
+        '200':
+          description: Conflictos obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConflictoEscaleta'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+components:
+
+  schemas:
+
+    Actuacion:
+      type: object
+      description: Actuación programada dentro de la escaleta
+      properties:
+        id:
+          type: integer
+          description: Identificador único de la actuación
+          example: 12
+
+        idArtista:
+          type: integer
+          description: Identificador del artista
+          example: 8
+
+        nombreArtista:
+          type: string
+          description: Nombre del artista o grupo
+          example: "Arde Bogotá"
+
+        idEspacio:
+          type: integer
+          description: Identificador del espacio donde se realiza
+          example: 3
+
+        nombreEspacio:
+          type: string
+          description: Nombre del espacio o escenario
+          example: "Escenario Principal"
+
+        fecha:
+          type: string
+          format: date
+          description: Fecha de la actuación
+          example: "2027-07-16"
+
+        horaInicio:
+          type: string
+          format: time
+          description: Hora de inicio
+          example: "21:30:00"
+
+        horaFin:
+          type: string
+          format: time
+          description: Hora de finalización
+          example: "23:00:00"
+
+        estado:
+          type: string
+          description: Estado actual de la actuación
+          enum:
+            - programada
+            - en_curso
+            - finalizada
+            - cancelada
+          example: "programada"
+
+      required:
+        - id
+        - idArtista
+        - nombreArtista
+        - idEspacio
+        - nombreEspacio
+        - fecha
+        - horaInicio
+        - horaFin
+        - estado
+
+
+    ActuacionInput:
+      type: object
+      description: Datos necesarios para crear o modificar una actuación
+      properties:
+        idArtista:
+          type: integer
+          description: Identificador del artista
+          example: 8
+
+        idEspacio:
+          type: integer
+          description: Identificador del espacio
+          example: 3
+
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        horaInicio:
+          type: string
+          format: time
+          example: "21:30:00"
+
+        horaFin:
+          type: string
+          format: time
+          example: "23:00:00"
+
+        estado:
+          type: string
+          enum:
+            - programada
+            - en_curso
+            - finalizada
+            - cancelada
+          example: "programada"
+
+      required:
+        - idArtista
+        - idEspacio
+        - fecha
+        - horaInicio
+        - horaFin
+
+
+    ActualizacionHorario:
+      type: object
+      description: Datos necesarios para modificar el horario de una actuación
+      properties:
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-17"
+
+        horaInicio:
+          type: string
+          format: time
+          example: "22:00:00"
+
+        horaFin:
+          type: string
+          format: time
+          example: "23:30:00"
+
+      required:
+        - fecha
+        - horaInicio
+        - horaFin
+
+
+    ActualizacionEspacio:
+      type: object
+      description: Datos necesarios para cambiar el espacio de una actuación
+      properties:
+        idEspacio:
+          type: integer
+          description: Nuevo espacio asignado a la actuación
+          example: 5
+
+      required:
+        - idEspacio
+
+
+    ConflictoEscaleta:
+      type: object
+      description: Conflicto detectado en la programación
+      properties:
+        idActuacion1:
+          type: integer
+          example: 12
+
+        idActuacion2:
+          type: integer
+          example: 15
+
+        idEspacio:
+          type: integer
+          example: 3
+
+        descripcion:
+          type: string
+          example: "Las dos actuaciones coinciden en el mismo espacio y horario."
+
+      required:
+        - idActuacion1
+        - idActuacion2
+        - idEspacio
+        - descripcion
+
+
+    Error:
+      type: object
+      description: Información sobre un error producido en la API
+      properties:
+        codigo:
+          type: integer
+          example: 404
+
+        mensaje:
+          type: string
+          example: "Actuación no encontrada"
+
+      required:
+        - codigo
+        - mensaje

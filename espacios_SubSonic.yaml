@@ -1,0 +1,723 @@
+openapi: 3.0.3
+
+info:
+  title: API Espacios - Subsonic Festival
+  description: >
+    API encargada de gestionar los diferentes espacios del festival
+    Subsonic, incluyendo escenarios, zonas y otros lugares utilizados
+    durante el festival.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Servidor local
+
+tags:
+  - name: Espacios
+    description: Gestión de los espacios del festival
+
+paths:
+
+  /espacios:
+    get:
+      tags:
+        - Espacios
+      summary: Obtener todos los espacios
+      description: >
+        Devuelve todos los espacios registrados en el festival.
+        Permite filtrar por tipo y estado.
+      parameters:
+        - name: tipo
+          in: query
+          required: false
+          description: Tipo de espacio
+          schema:
+            type: string
+            enum:
+              - escenario
+              - restauracion
+              - descanso
+              - servicios
+              - merchandising
+              - otros
+            example: escenario
+
+        - name: estado
+          in: query
+          required: false
+          description: Estado actual del espacio
+          schema:
+            type: string
+            enum:
+              - disponible
+              - ocupado
+              - cerrado
+            example: disponible
+
+      responses:
+        '200':
+          description: Espacios obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Espacio'
+
+        '400':
+          description: Parámetros de búsqueda no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    post:
+      tags:
+        - Espacios
+      summary: Crear un espacio
+      description: >
+        Registra un nuevo espacio dentro del recinto del festival.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EspacioInput'
+
+      responses:
+        '201':
+          description: Espacio creado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Espacio'
+
+        '400':
+          description: Datos del espacio no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: Ya existe un espacio con esos datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /espacios/{idEspacio}:
+    parameters:
+      - name: idEspacio
+        in: path
+        required: true
+        description: Identificador del espacio
+        schema:
+          type: integer
+          example: 3
+
+    get:
+      tags:
+        - Espacios
+      summary: Obtener un espacio
+      description: >
+        Devuelve toda la información de un espacio concreto.
+      responses:
+        '200':
+          description: Espacio encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Espacio'
+
+        '404':
+          description: Espacio no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    put:
+      tags:
+        - Espacios
+      summary: Modificar un espacio
+      description: >
+        Modifica los datos de un espacio existente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EspacioInput'
+
+      responses:
+        '200':
+          description: Espacio modificado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Espacio'
+
+        '400':
+          description: Datos del espacio no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Espacio no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: Conflicto al modificar el espacio
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+    delete:
+      tags:
+        - Espacios
+      summary: Eliminar un espacio
+      description: >
+        Elimina un espacio del festival siempre que no esté siendo
+        utilizado por algún evento o actuación.
+      responses:
+        '204':
+          description: Espacio eliminado correctamente
+
+        '404':
+          description: Espacio no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '409':
+          description: >
+            El espacio no puede eliminarse porque está siendo utilizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /espacios/disponibles:
+    get:
+      tags:
+        - Espacios
+      summary: Obtener espacios disponibles
+      description: >
+        Devuelve los espacios que están disponibles para ser utilizados.
+
+      responses:
+        '200':
+          description: Espacios disponibles obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Espacio'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /espacios/disponibilidad:
+    get:
+      tags:
+        - Espacios
+      summary: Consultar disponibilidad de espacios
+      description: >
+        Devuelve los espacios disponibles durante una fecha y
+        franja horaria determinadas.
+      parameters:
+        - name: fecha
+          in: query
+          required: true
+          description: Fecha para la que se consulta la disponibilidad
+          schema:
+            type: string
+            format: date
+            example: "2027-07-16"
+
+        - name: horaInicio
+          in: query
+          required: true
+          description: Hora de inicio de la franja
+          schema:
+            type: string
+            format: time
+            example: "20:00:00"
+
+        - name: horaFin
+          in: query
+          required: true
+          description: Hora de finalización de la franja
+          schema:
+            type: string
+            format: time
+            example: "22:00:00"
+
+      responses:
+        '200':
+          description: Disponibilidad consultada correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Espacio'
+
+        '400':
+          description: Fecha u horario no válidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /espacios/tipo/{tipo}:
+    get:
+      tags:
+        - Espacios
+      summary: Obtener espacios por tipo
+      description: >
+        Devuelve los espacios pertenecientes a un tipo determinado.
+      parameters:
+        - name: tipo
+          in: path
+          required: true
+          description: Tipo de espacio que se quiere consultar
+          schema:
+            type: string
+            enum:
+              - escenario
+              - restauracion
+              - descanso
+              - servicios
+              - merchandising
+              - otros
+            example: escenario
+
+      responses:
+        '200':
+          description: Espacios obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Espacio'
+
+        '400':
+          description: Tipo de espacio no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /espacios/{idEspacio}/estado:
+    patch:
+      tags:
+        - Espacios
+      summary: Modificar el estado de un espacio
+      description: >
+        Permite cambiar el estado de un espacio sin modificar
+        el resto de sus datos.
+      parameters:
+        - name: idEspacio
+          in: path
+          required: true
+          description: Identificador del espacio
+          schema:
+            type: integer
+            example: 3
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizacionEstado'
+
+      responses:
+        '200':
+          description: Estado actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Espacio'
+
+        '400':
+          description: Estado no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Espacio no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /espacios/{idEspacio}/capacidad:
+    patch:
+      tags:
+        - Espacios
+      summary: Modificar la capacidad de un espacio
+      description: >
+        Permite actualizar la capacidad máxima permitida
+        de un espacio.
+      parameters:
+        - name: idEspacio
+          in: path
+          required: true
+          description: Identificador del espacio
+          schema:
+            type: integer
+            example: 3
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizacionCapacidad'
+
+      responses:
+        '200':
+          description: Capacidad actualizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Espacio'
+
+        '400':
+          description: Capacidad no válida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Espacio no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /espacios/{idEspacio}/eventos:
+    get:
+      tags:
+        - Espacios
+      summary: Obtener eventos de un espacio
+      description: >
+        Devuelve los eventos o actuaciones asociados a un espacio
+        determinado.
+      parameters:
+        - name: idEspacio
+          in: path
+          required: true
+          description: Identificador del espacio
+          schema:
+            type: integer
+            example: 3
+
+      responses:
+        '200':
+          description: Eventos obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventoEspacio'
+
+        '404':
+          description: Espacio no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+components:
+
+  schemas:
+
+    Espacio:
+      type: object
+      description: Espacio disponible dentro del festival
+      properties:
+        id:
+          type: integer
+          description: Identificador único del espacio
+          example: 3
+
+        nombre:
+          type: string
+          description: Nombre del espacio
+          example: "Escenario Principal"
+
+        tipo:
+          type: string
+          description: Tipo de espacio
+          enum:
+            - escenario
+            - restauracion
+            - descanso
+            - servicios
+            - merchandising
+            - otros
+          example: escenario
+
+        ubicacion:
+          type: string
+          description: Ubicación del espacio dentro del recinto
+          example: "Zona Norte"
+
+        capacidad:
+          type: integer
+          description: Número máximo de personas permitido
+          minimum: 1
+          example: 15000
+
+        descripcion:
+          type: string
+          description: Información adicional sobre el espacio
+          example: "Escenario principal destinado a los conciertos de mayor afluencia."
+
+        estado:
+          type: string
+          description: Estado actual del espacio
+          enum:
+            - disponible
+            - ocupado
+            - cerrado
+          example: disponible
+
+      required:
+        - id
+        - nombre
+        - tipo
+        - ubicacion
+        - capacidad
+        - estado
+
+
+    EspacioInput:
+      type: object
+      description: Datos necesarios para crear o modificar un espacio
+      properties:
+        nombre:
+          type: string
+          example: "Escenario Principal"
+
+        tipo:
+          type: string
+          enum:
+            - escenario
+            - restauracion
+            - descanso
+            - servicios
+            - merchandising
+            - otros
+          example: escenario
+
+        ubicacion:
+          type: string
+          example: "Zona Norte"
+
+        capacidad:
+          type: integer
+          minimum: 1
+          example: 15000
+
+        descripcion:
+          type: string
+          example: "Escenario principal del festival."
+
+        estado:
+          type: string
+          enum:
+            - disponible
+            - ocupado
+            - cerrado
+          example: disponible
+
+      required:
+        - nombre
+        - tipo
+        - ubicacion
+        - capacidad
+        - estado
+
+
+    ActualizacionEstado:
+      type: object
+      description: Datos necesarios para modificar el estado de un espacio
+      properties:
+        estado:
+          type: string
+          enum:
+            - disponible
+            - ocupado
+            - cerrado
+          example: cerrado
+
+      required:
+        - estado
+
+
+    ActualizacionCapacidad:
+      type: object
+      description: Datos necesarios para modificar la capacidad de un espacio
+      properties:
+        capacidad:
+          type: integer
+          minimum: 1
+          example: 12000
+
+      required:
+        - capacidad
+
+
+    EventoEspacio:
+      type: object
+      description: Evento o actuación asociado a un espacio
+      properties:
+        idEvento:
+          type: integer
+          example: 12
+
+        nombre:
+          type: string
+          example: "Concierto Arde Bogotá"
+
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        horaInicio:
+          type: string
+          format: time
+          example: "21:30:00"
+
+        horaFin:
+          type: string
+          format: time
+          example: "23:00:00"
+
+      required:
+        - idEvento
+        - nombre
+        - fecha
+        - horaInicio
+        - horaFin
+
+
+    Error:
+      type: object
+      description: Información sobre un error producido en la API
+      properties:
+        codigo:
+          type: integer
+          example: 404
+
+        mensaje:
+          type: string
+          example: "Espacio no encontrado"
+
+      required:
+        - codigo
+        - mensaje
