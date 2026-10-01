@@ -4,8 +4,12 @@ info:
   title: API Espacios - Subsonic Festival
   description: >
     API encargada de gestionar los diferentes espacios del festival
-    Subsonic, incluyendo escenarios, zonas y otros lugares utilizados
-    durante el festival.
+    Subsonic, incluyendo escenarios, zonas de restauración, descanso,
+    servicios y otros lugares utilizados durante el festival.
+
+    El componente Espacios mantiene la información propia de cada espacio
+    y su estado operativo. La disponibilidad para una fecha y hora concretas
+    se calcula teniendo en cuenta la programación de la escaleta.
   version: 1.0.0
 
 servers:
@@ -16,17 +20,22 @@ tags:
   - name: Espacios
     description: Gestión de los espacios del festival
 
+
 paths:
 
   /espacios:
     get:
       tags:
         - Espacios
+
       summary: Obtener todos los espacios
+
       description: >
         Devuelve todos los espacios registrados en el festival.
-        Permite filtrar por tipo y estado.
+        Permite filtrar por tipo y estado operativo.
+
       parameters:
+
         - name: tipo
           in: query
           required: false
@@ -45,16 +54,17 @@ paths:
         - name: estado
           in: query
           required: false
-          description: Estado actual del espacio
+          description: Estado operativo del espacio
           schema:
             type: string
             enum:
-              - disponible
-              - ocupado
+              - activo
+              - mantenimiento
               - cerrado
-            example: disponible
+            example: activo
 
       responses:
+
         '200':
           description: Espacios obtenidos correctamente
           content:
@@ -82,9 +92,12 @@ paths:
     post:
       tags:
         - Espacios
+
       summary: Crear un espacio
+
       description: >
         Registra un nuevo espacio dentro del recinto del festival.
+
       requestBody:
         required: true
         content:
@@ -93,6 +106,7 @@ paths:
               $ref: '#/components/schemas/EspacioInput'
 
       responses:
+
         '201':
           description: Espacio creado correctamente
           content:
@@ -123,7 +137,9 @@ paths:
 
 
   /espacios/{idEspacio}:
+
     parameters:
+
       - name: idEspacio
         in: path
         required: true
@@ -132,13 +148,18 @@ paths:
           type: integer
           example: 3
 
+
     get:
       tags:
         - Espacios
+
       summary: Obtener un espacio
+
       description: >
         Devuelve toda la información de un espacio concreto.
+
       responses:
+
         '200':
           description: Espacio encontrado
           content:
@@ -164,9 +185,12 @@ paths:
     put:
       tags:
         - Espacios
+
       summary: Modificar un espacio
+
       description: >
-        Modifica los datos de un espacio existente.
+        Modifica los datos generales de un espacio existente.
+
       requestBody:
         required: true
         content:
@@ -175,6 +199,7 @@ paths:
               $ref: '#/components/schemas/EspacioInput'
 
       responses:
+
         '200':
           description: Espacio modificado correctamente
           content:
@@ -214,11 +239,15 @@ paths:
     delete:
       tags:
         - Espacios
+
       summary: Eliminar un espacio
+
       description: >
-        Elimina un espacio del festival siempre que no esté siendo
-        utilizado por algún evento o actuación.
+        Elimina un espacio del festival siempre que no tenga
+        actuaciones u otros elementos asociados.
+
       responses:
+
         '204':
           description: Espacio eliminado correctamente
 
@@ -232,6 +261,7 @@ paths:
         '409':
           description: >
             El espacio no puede eliminarse porque está siendo utilizado
+            por la programación del festival.
           content:
             application/json:
               schema:
@@ -245,17 +275,21 @@ paths:
                 $ref: '#/components/schemas/Error'
 
 
-  /espacios/disponibles:
+  /espacios/activos:
     get:
       tags:
         - Espacios
-      summary: Obtener espacios disponibles
+
+      summary: Obtener espacios activos
+
       description: >
-        Devuelve los espacios que están disponibles para ser utilizados.
+        Devuelve todos los espacios que están operativos actualmente.
+        Esto no significa que estén libres en una fecha y hora concretas.
 
       responses:
+
         '200':
-          description: Espacios disponibles obtenidos correctamente
+          description: Espacios activos obtenidos correctamente
           content:
             application/json:
               schema:
@@ -275,11 +309,16 @@ paths:
     get:
       tags:
         - Espacios
+
       summary: Consultar disponibilidad de espacios
+
       description: >
         Devuelve los espacios disponibles durante una fecha y
-        franja horaria determinadas.
+        franja horaria determinadas. Para calcular la disponibilidad
+        se tiene en cuenta la programación existente en la escaleta.
+
       parameters:
+
         - name: fecha
           in: query
           required: true
@@ -307,7 +346,22 @@ paths:
             format: time
             example: "22:00:00"
 
+        - name: tipo
+          in: query
+          required: false
+          description: Filtrar la disponibilidad por tipo de espacio
+          schema:
+            type: string
+            enum:
+              - escenario
+              - restauracion
+              - descanso
+              - servicios
+              - merchandising
+              - otros
+
       responses:
+
         '200':
           description: Disponibilidad consultada correctamente
           content:
@@ -315,7 +369,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Espacio'
+                  $ref: '#/components/schemas/DisponibilidadEspacio'
 
         '400':
           description: Fecha u horario no válidos
@@ -336,10 +390,14 @@ paths:
     get:
       tags:
         - Espacios
+
       summary: Obtener espacios por tipo
+
       description: >
         Devuelve los espacios pertenecientes a un tipo determinado.
+
       parameters:
+
         - name: tipo
           in: path
           required: true
@@ -356,6 +414,7 @@ paths:
             example: escenario
 
       responses:
+
         '200':
           description: Espacios obtenidos correctamente
           content:
@@ -384,11 +443,15 @@ paths:
     patch:
       tags:
         - Espacios
+
       summary: Modificar el estado de un espacio
+
       description: >
-        Permite cambiar el estado de un espacio sin modificar
-        el resto de sus datos.
+        Permite cambiar el estado operativo de un espacio sin
+        modificar el resto de sus datos.
+
       parameters:
+
         - name: idEspacio
           in: path
           required: true
@@ -405,6 +468,7 @@ paths:
               $ref: '#/components/schemas/ActualizacionEstado'
 
       responses:
+
         '200':
           description: Estado actualizado correctamente
           content:
@@ -438,11 +502,15 @@ paths:
     patch:
       tags:
         - Espacios
+
       summary: Modificar la capacidad de un espacio
+
       description: >
         Permite actualizar la capacidad máxima permitida
         de un espacio.
+
       parameters:
+
         - name: idEspacio
           in: path
           required: true
@@ -459,6 +527,7 @@ paths:
               $ref: '#/components/schemas/ActualizacionCapacidad'
 
       responses:
+
         '200':
           description: Capacidad actualizada correctamente
           content:
@@ -488,15 +557,19 @@ paths:
                 $ref: '#/components/schemas/Error'
 
 
-  /espacios/{idEspacio}/eventos:
+  /espacios/{idEspacio}/actuaciones:
     get:
       tags:
         - Espacios
-      summary: Obtener eventos de un espacio
+
+      summary: Obtener actuaciones de un espacio
+
       description: >
-        Devuelve los eventos o actuaciones asociados a un espacio
-        determinado.
+        Devuelve las actuaciones de la escaleta asociadas
+        a un espacio concreto.
+
       parameters:
+
         - name: idEspacio
           in: path
           required: true
@@ -506,14 +579,15 @@ paths:
             example: 3
 
       responses:
+
         '200':
-          description: Eventos obtenidos correctamente
+          description: Actuaciones obtenidas correctamente
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/EventoEspacio'
+                  $ref: '#/components/schemas/ActuacionEspacio'
 
         '404':
           description: Espacio no encontrado
@@ -536,8 +610,10 @@ components:
 
     Espacio:
       type: object
-      description: Espacio disponible dentro del festival
+      description: Espacio existente dentro del recinto del festival
+
       properties:
+
         id:
           type: integer
           description: Identificador único del espacio
@@ -574,16 +650,18 @@ components:
         descripcion:
           type: string
           description: Información adicional sobre el espacio
-          example: "Escenario principal destinado a los conciertos de mayor afluencia."
+          example: >
+            Escenario principal destinado a los conciertos
+            de mayor afluencia.
 
         estado:
           type: string
-          description: Estado actual del espacio
+          description: Estado operativo del espacio
           enum:
-            - disponible
-            - ocupado
+            - activo
+            - mantenimiento
             - cerrado
-          example: disponible
+          example: activo
 
       required:
         - id
@@ -597,7 +675,9 @@ components:
     EspacioInput:
       type: object
       description: Datos necesarios para crear o modificar un espacio
+
       properties:
+
         nombre:
           type: string
           example: "Escenario Principal"
@@ -629,10 +709,10 @@ components:
         estado:
           type: string
           enum:
-            - disponible
-            - ocupado
+            - activo
+            - mantenimiento
             - cerrado
-          example: disponible
+          example: activo
 
       required:
         - nombre
@@ -645,14 +725,16 @@ components:
     ActualizacionEstado:
       type: object
       description: Datos necesarios para modificar el estado de un espacio
+
       properties:
+
         estado:
           type: string
           enum:
-            - disponible
-            - ocupado
+            - activo
+            - mantenimiento
             - cerrado
-          example: cerrado
+          example: mantenimiento
 
       required:
         - estado
@@ -661,7 +743,9 @@ components:
     ActualizacionCapacidad:
       type: object
       description: Datos necesarios para modificar la capacidad de un espacio
+
       properties:
+
         capacidad:
           type: integer
           minimum: 1
@@ -671,17 +755,70 @@ components:
         - capacidad
 
 
-    EventoEspacio:
+    DisponibilidadEspacio:
       type: object
-      description: Evento o actuación asociado a un espacio
+      description: Disponibilidad de un espacio en una franja determinada
+
       properties:
-        idEvento:
+
+        idEspacio:
+          type: integer
+          example: 3
+
+        nombreEspacio:
+          type: string
+          example: "Escenario Principal"
+
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        horaInicio:
+          type: string
+          format: time
+          example: "20:00:00"
+
+        horaFin:
+          type: string
+          format: time
+          example: "22:00:00"
+
+        disponible:
+          type: boolean
+          example: false
+
+        motivo:
+          type: string
+          nullable: true
+          example: "Existe una actuación programada de 21:30 a 23:00"
+
+      required:
+        - idEspacio
+        - nombreEspacio
+        - fecha
+        - horaInicio
+        - horaFin
+        - disponible
+
+
+    ActuacionEspacio:
+      type: object
+      description: Actuación asociada a un espacio
+
+      properties:
+
+        idActuacion:
           type: integer
           example: 12
 
-        nombre:
+        idArtista:
+          type: integer
+          example: 8
+
+        nombreArtista:
           type: string
-          example: "Concierto Arde Bogotá"
+          example: "Arde Bogotá"
 
         fecha:
           type: string
@@ -699,8 +836,7 @@ components:
           example: "23:00:00"
 
       required:
-        - idEvento
-        - nombre
+        - idActuacion
         - fecha
         - horaInicio
         - horaFin
@@ -709,7 +845,9 @@ components:
     Error:
       type: object
       description: Información sobre un error producido en la API
+
       properties:
+
         codigo:
           type: integer
           example: 404
