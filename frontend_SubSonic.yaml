@@ -1,0 +1,714 @@
+openapi: 3.0.3
+
+info:
+  title: API Front-end - Subsonic Festival
+  description: >
+    API de soporte al Front-end de Subsonic Festival.
+    Proporciona a la interfaz la información necesaria para mostrar
+    la página principal, la programación, el perfil del usuario,
+    las entradas y el merchandising.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Servidor local
+
+tags:
+  - name: Inicio
+    description: Información mostrada en la página principal
+
+  - name: Programacion
+    description: Información de programación mostrada al usuario
+
+  - name: Perfil
+    description: Información del área personal del usuario
+
+  - name: Tienda
+    description: Información mostrada en la tienda
+
+  - name: Navegacion
+    description: Elementos generales de navegación de la aplicación
+
+
+paths:
+
+  /frontend/inicio:
+    get:
+      tags:
+        - Inicio
+      summary: Obtener información de la página principal
+      description: >
+        Devuelve la información necesaria para construir la página
+        principal de Subsonic Festival, incluyendo próximas actuaciones,
+        artistas destacados y productos destacados.
+
+      responses:
+        '200':
+          description: Información obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaInicio'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /frontend/programacion:
+    get:
+      tags:
+        - Programacion
+      summary: Obtener programación
+      description: >
+        Devuelve la programación que se mostrará en el Front-end.
+        Permite filtrar las actuaciones por fecha.
+
+      parameters:
+        - name: fecha
+          in: query
+          required: false
+          description: Fecha por la que se quiere filtrar la programación
+          schema:
+            type: string
+            format: date
+            example: "2027-07-16"
+
+      responses:
+        '200':
+          description: Programación obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActuacionFront'
+
+        '400':
+          description: Fecha no válida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /frontend/programacion/{idActuacion}:
+    get:
+      tags:
+        - Programacion
+      summary: Obtener detalle de una actuación
+      description: >
+        Devuelve la información necesaria para mostrar el detalle
+        de una actuación en el Front-end.
+
+      parameters:
+        - name: idActuacion
+          in: path
+          required: true
+          description: Identificador de la actuación
+          schema:
+            type: integer
+            example: 12
+
+      responses:
+        '200':
+          description: Actuación obtenida correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetalleActuacion'
+
+        '404':
+          description: Actuación no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /frontend/perfil/{idUsuario}:
+    get:
+      tags:
+        - Perfil
+      summary: Obtener información del perfil
+      description: >
+        Devuelve la información necesaria para mostrar el área
+        personal de un usuario.
+
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          description: Identificador del usuario
+          schema:
+            type: integer
+            example: 25
+
+      responses:
+        '200':
+          description: Perfil obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerfilFront'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /frontend/perfil/{idUsuario}/entradas:
+    get:
+      tags:
+        - Perfil
+      summary: Obtener entradas del usuario
+      description: >
+        Devuelve las entradas que deben mostrarse en el área
+        personal del usuario.
+
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          description: Identificador del usuario
+          schema:
+            type: integer
+            example: 25
+
+      responses:
+        '200':
+          description: Entradas obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntradaFront'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /frontend/perfil/{idUsuario}/recomendaciones:
+    get:
+      tags:
+        - Perfil
+      summary: Obtener recomendaciones del usuario
+      description: >
+        Devuelve las actuaciones recomendadas que se mostrarán
+        en el perfil de un usuario.
+
+      parameters:
+        - name: idUsuario
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 25
+
+      responses:
+        '200':
+          description: Recomendaciones obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecomendacionFront'
+
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /frontend/tienda:
+    get:
+      tags:
+        - Tienda
+      summary: Obtener información de la tienda
+      description: >
+        Devuelve los productos de merchandising que deben
+        mostrarse en la tienda del Front-end.
+
+      parameters:
+        - name: categoria
+          in: query
+          required: false
+          description: Categoría de los productos
+          schema:
+            type: string
+            enum:
+              - camiseta
+              - sudadera
+              - accesorio
+              - poster
+              - otros
+            example: camiseta
+
+      responses:
+        '200':
+          description: Productos obtenidos correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductoFront'
+
+        '400':
+          description: Categoría no válida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /frontend/entradas:
+    get:
+      tags:
+        - Inicio
+      summary: Obtener entradas disponibles
+      description: >
+        Devuelve los tipos de entrada que pueden mostrarse
+        y comprarse desde el Front-end.
+
+      responses:
+        '200':
+          description: Entradas obtenidas correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TipoEntradaFront'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /frontend/menu:
+    get:
+      tags:
+        - Navegacion
+      summary: Obtener menú de navegación
+      description: >
+        Devuelve las opciones de navegación disponibles
+        en la aplicación.
+
+      responses:
+        '200':
+          description: Menú obtenido correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OpcionMenu'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+components:
+
+  schemas:
+
+    PaginaInicio:
+      type: object
+      description: Información necesaria para construir la página principal
+      properties:
+        nombreFestival:
+          type: string
+          example: "Subsonic Festival"
+
+        descripcion:
+          type: string
+          example: "Festival de música Subsonic 2027"
+
+        fechaInicio:
+          type: string
+          format: date
+          example: "2027-07-15"
+
+        fechaFin:
+          type: string
+          format: date
+          example: "2027-07-18"
+
+        proximasActuaciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActuacionFront'
+
+        productosDestacados:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductoFront'
+
+      required:
+        - nombreFestival
+        - fechaInicio
+        - fechaFin
+        - proximasActuaciones
+
+
+    ActuacionFront:
+      type: object
+      description: Información resumida de una actuación
+      properties:
+        idActuacion:
+          type: integer
+          example: 12
+
+        artista:
+          type: string
+          example: "Arde Bogotá"
+
+        espacio:
+          type: string
+          example: "Escenario Principal"
+
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        horaInicio:
+          type: string
+          format: time
+          example: "21:30:00"
+
+      required:
+        - idActuacion
+        - artista
+        - espacio
+        - fecha
+        - horaInicio
+
+
+    DetalleActuacion:
+      type: object
+      description: Información completa de una actuación mostrada al usuario
+      properties:
+        idActuacion:
+          type: integer
+          example: 12
+
+        idArtista:
+          type: integer
+          example: 8
+
+        artista:
+          type: string
+          example: "Arde Bogotá"
+
+        descripcion:
+          type: string
+          example: "Actuación de Arde Bogotá en Subsonic Festival"
+
+        idEspacio:
+          type: integer
+          example: 3
+
+        espacio:
+          type: string
+          example: "Escenario Principal"
+
+        ubicacion:
+          type: string
+          example: "Zona Norte"
+
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        horaInicio:
+          type: string
+          format: time
+          example: "21:30:00"
+
+        horaFin:
+          type: string
+          format: time
+          example: "23:00:00"
+
+      required:
+        - idActuacion
+        - artista
+        - espacio
+        - fecha
+        - horaInicio
+        - horaFin
+
+
+    PerfilFront:
+      type: object
+      description: Información mostrada en el perfil del usuario
+      properties:
+        idUsuario:
+          type: integer
+          example: 25
+
+        nombre:
+          type: string
+          example: "Laura"
+
+        apellidos:
+          type: string
+          example: "García Sánchez"
+
+        email:
+          type: string
+          format: email
+          example: "laura@email.com"
+
+        fotoPerfil:
+          type: string
+          nullable: true
+          example: "/imagenes/perfiles/usuario25.jpg"
+
+        tipoUsuario:
+          type: string
+          enum:
+            - cliente
+            - proveedor
+            - administrador
+          example: cliente
+
+      required:
+        - idUsuario
+        - nombre
+        - apellidos
+        - email
+        - tipoUsuario
+
+
+    EntradaFront:
+      type: object
+      description: Entrada mostrada en el perfil del usuario
+      properties:
+        idEntrada:
+          type: integer
+          example: 4589
+
+        nombre:
+          type: string
+          example: "Abono completo"
+
+        codigo:
+          type: string
+          example: "SUB-2027-004589"
+
+        estado:
+          type: string
+          enum:
+            - valida
+            - utilizada
+            - cancelada
+          example: valida
+
+      required:
+        - idEntrada
+        - nombre
+        - codigo
+        - estado
+
+
+    TipoEntradaFront:
+      type: object
+      description: Tipo de entrada mostrado en el Front-end
+      properties:
+        idTipoEntrada:
+          type: integer
+          example: 2
+
+        nombre:
+          type: string
+          example: "Abono completo"
+
+        descripcion:
+          type: string
+          example: "Acceso durante todos los días del festival"
+
+        precio:
+          type: number
+          format: double
+          example: 89.99
+
+        disponible:
+          type: boolean
+          example: true
+
+      required:
+        - idTipoEntrada
+        - nombre
+        - precio
+        - disponible
+
+
+    ProductoFront:
+      type: object
+      description: Producto mostrado en la tienda
+      properties:
+        idProducto:
+          type: integer
+          example: 15
+
+        nombre:
+          type: string
+          example: "Camiseta Subsonic 2027"
+
+        precio:
+          type: number
+          format: double
+          example: 24.99
+
+        imagen:
+          type: string
+          example: "/imagenes/merchandising/camiseta2027.jpg"
+
+        disponible:
+          type: boolean
+          example: true
+
+      required:
+        - idProducto
+        - nombre
+        - precio
+        - disponible
+
+
+    RecomendacionFront:
+      type: object
+      description: Recomendación mostrada al usuario
+      properties:
+        idActuacion:
+          type: integer
+          example: 12
+
+        artista:
+          type: string
+          example: "Arde Bogotá"
+
+        fecha:
+          type: string
+          format: date
+          example: "2027-07-16"
+
+        hora:
+          type: string
+          format: time
+          example: "21:30:00"
+
+        motivo:
+          type: string
+          example: "Relacionado con tus artistas de interés"
+
+      required:
+        - idActuacion
+        - artista
+        - fecha
+        - hora
+
+
+    OpcionMenu:
+      type: object
+      description: Opción disponible en el menú de navegación
+      properties:
+        nombre:
+          type: string
+          example: "Programación"
+
+        ruta:
+          type: string
+          example: "/programacion"
+
+        requiereAutenticacion:
+          type: boolean
+          example: false
+
+      required:
+        - nombre
+        - ruta
+        - requiereAutenticacion
+
+
+    Error:
+      type: object
+      description: Información sobre un error producido en la API
+      properties:
+        codigo:
+          type: integer
+          example: 404
+
+        mensaje:
+          type: string
+          example: "Recurso no encontrado"
+
+      required:
+        - codigo
+        - mensaje
