@@ -32,13 +32,25 @@ paths:
         - Entradas
       summary: Obtener los tipos de entrada
       description: >
-        Devuelve todos los tipos de entrada disponibles para
-        Subsonic Festival.
+        Devuelve los tipos de entrada disponibles para Subsonic Festival:
+        VIP, abono completo y abono de un día.
       parameters:
+        - name: tipo
+          in: query
+          required: false
+          description: Filtrar por tipo de entrada
+          schema:
+            type: string
+            enum:
+              - vip
+              - abono_completo
+              - abono_un_dia
+            example: abono_completo
+
         - name: estado
           in: query
           required: false
-          description: Filtrar entradas según su disponibilidad
+          description: Filtrar según la disponibilidad de la entrada
           schema:
             type: string
             enum:
@@ -57,7 +69,7 @@ paths:
                   $ref: '#/components/schemas/TipoEntrada'
 
         '400':
-          description: Parámetro de búsqueda no válido
+          description: Parámetros de búsqueda no válidos
           content:
             application/json:
               schema:
@@ -76,7 +88,8 @@ paths:
         - Entradas
       summary: Crear un tipo de entrada
       description: >
-        Crea un nuevo tipo de entrada para el festival.
+        Permite crear un nuevo tipo de entrada para el festival.
+
       requestBody:
         required: true
         content:
@@ -100,7 +113,7 @@ paths:
                 $ref: '#/components/schemas/Error'
 
         '409':
-          description: Ya existe un tipo de entrada con esos datos
+          description: El tipo de entrada ya existe
           content:
             application/json:
               schema:
@@ -133,7 +146,7 @@ paths:
 
       responses:
         '200':
-          description: Entrada encontrada
+          description: Tipo de entrada encontrado
           content:
             application/json:
               schema:
@@ -159,7 +172,8 @@ paths:
         - Entradas
       summary: Modificar un tipo de entrada
       description: >
-        Modifica los datos de un tipo de entrada existente.
+        Permite modificar los datos de un tipo de entrada existente.
+
       requestBody:
         required: true
         content:
@@ -217,9 +231,59 @@ paths:
                 $ref: '#/components/schemas/Error'
 
         '409':
-          description: >
-            No se puede eliminar porque existen entradas vendidas
-            de este tipo
+          description: No se puede eliminar porque existen compras asociadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /entradas/tipo/{tipo}:
+    get:
+      tags:
+        - Entradas
+      summary: Obtener entradas por tipo
+      description: >
+        Permite consultar la información correspondiente a un tipo
+        de entrada: VIP, abono completo o abono de un día.
+
+      parameters:
+        - name: tipo
+          in: path
+          required: true
+          description: Tipo de entrada que se quiere consultar
+          schema:
+            type: string
+            enum:
+              - vip
+              - abono_completo
+              - abono_un_dia
+            example: vip
+
+      responses:
+        '200':
+          description: Tipo de entrada obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoEntrada'
+
+        '400':
+          description: Tipo de entrada no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Tipo de entrada no encontrado
           content:
             application/json:
               schema:
@@ -239,8 +303,8 @@ paths:
         - Entradas
       summary: Obtener entradas disponibles
       description: >
-        Devuelve los tipos de entrada que todavía disponen
-        de unidades para su venta.
+        Devuelve los tipos de entrada que todavía tienen
+        unidades disponibles para su compra.
 
       responses:
         '200':
@@ -266,8 +330,8 @@ paths:
         - Compras
       summary: Comprar entradas
       description: >
-        Permite a un usuario realizar la compra de una o varias
-        entradas para Subsonic Festival.
+        Permite a un usuario comprar una o varias entradas
+        para Subsonic Festival.
 
       requestBody:
         required: true
@@ -401,13 +465,13 @@ paths:
         - Entradas
       summary: Cancelar una entrada
       description: >
-        Cancela una entrada adquirida por un usuario.
+        Permite cancelar una entrada adquirida por un usuario.
 
       parameters:
         - name: idEntrada
           in: path
           required: true
-          description: Identificador de la entrada comprada
+          description: Identificador de la entrada
           schema:
             type: integer
             example: 4589
@@ -448,8 +512,8 @@ paths:
         - Validacion
       summary: Validar una entrada
       description: >
-        Comprueba una entrada durante el acceso al festival y,
-        si es válida, la marca como utilizada.
+        Comprueba una entrada durante el acceso al festival.
+        Si la entrada es válida se marca como utilizada.
 
       parameters:
         - name: idEntrada
@@ -476,7 +540,7 @@ paths:
                 $ref: '#/components/schemas/Error'
 
         '409':
-          description: Entrada cancelada o utilizada anteriormente
+          description: La entrada está cancelada o ya ha sido utilizada
           content:
             application/json:
               schema:
@@ -535,19 +599,26 @@ components:
 
     TipoEntrada:
       type: object
-      description: Tipo de entrada disponible para el festival
+      description: Tipo de entrada disponible para Subsonic Festival
       properties:
         id:
           type: integer
+          description: Identificador único del tipo de entrada
           example: 2
 
         nombre:
           type: string
-          example: "Abono completo"
+          description: Tipo de entrada
+          enum:
+            - vip
+            - abono_completo
+            - abono_un_dia
+          example: abono_completo
 
         descripcion:
           type: string
-          example: "Acceso al festival durante todos los días"
+          description: Descripción del tipo de entrada
+          example: "Permite acceder al festival durante todos los días"
 
         precio:
           type: number
@@ -588,6 +659,8 @@ components:
         - precio
         - stockTotal
         - stockDisponible
+        - fechaInicioValidez
+        - fechaFinValidez
         - estado
 
 
@@ -597,11 +670,16 @@ components:
       properties:
         nombre:
           type: string
-          example: "Entrada viernes"
+          description: Tipo de entrada
+          enum:
+            - vip
+            - abono_completo
+            - abono_un_dia
+          example: abono_un_dia
 
         descripcion:
           type: string
-          example: "Acceso al festival durante el viernes"
+          example: "Permite acceder al festival durante un único día"
 
         precio:
           type: number
@@ -676,6 +754,14 @@ components:
           type: integer
           example: 2
 
+        tipoEntrada:
+          type: string
+          enum:
+            - vip
+            - abono_completo
+            - abono_un_dia
+          example: abono_completo
+
         cantidad:
           type: integer
           example: 2
@@ -701,6 +787,7 @@ components:
         - idCompra
         - idUsuario
         - idTipoEntrada
+        - tipoEntrada
         - cantidad
         - precioTotal
         - fechaCompra
@@ -723,9 +810,13 @@ components:
           type: integer
           example: 2
 
-        nombre:
+        tipoEntrada:
           type: string
-          example: "Abono completo"
+          enum:
+            - vip
+            - abono_completo
+            - abono_un_dia
+          example: vip
 
         codigo:
           type: string
@@ -735,6 +826,16 @@ components:
           type: string
           format: date-time
           example: "2027-05-10T17:45:00Z"
+
+        fechaInicioValidez:
+          type: string
+          format: date
+          example: "2027-07-15"
+
+        fechaFinValidez:
+          type: string
+          format: date
+          example: "2027-07-18"
 
         estado:
           type: string
@@ -748,6 +849,7 @@ components:
         - idEntrada
         - idUsuario
         - idTipoEntrada
+        - tipoEntrada
         - codigo
         - estado
 
@@ -787,6 +889,14 @@ components:
           type: integer
           example: 4589
 
+        tipoEntrada:
+          type: string
+          enum:
+            - vip
+            - abono_completo
+            - abono_un_dia
+          example: abono_completo
+
         estado:
           type: string
           enum:
@@ -797,6 +907,7 @@ components:
 
       required:
         - idEntrada
+        - tipoEntrada
         - estado
 
 
