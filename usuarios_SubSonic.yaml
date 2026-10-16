@@ -6,6 +6,10 @@ info:
     API encargada de gestionar los usuarios de Subsonic Festival,
     incluyendo el registro, los perfiles, los tipos de usuario
     y sus métodos de pago.
+
+    Este componente es propietario de Usuario y MetodoPago. Entradas
+    y Merchandising consultan sus endpoints para validar compras;
+    Front-end y Estadísticas consultan los datos de usuarios.
   version: 1.0.0
 
 servers:
@@ -23,6 +27,7 @@ paths:
       tags:
         - Usuarios
       summary: Obtener todos los usuarios
+      operationId: usuarios_get_usuarios
       description: >
         Devuelve la lista de usuarios registrados.
         Permite filtrar por tipo de usuario.
@@ -68,10 +73,12 @@ paths:
       tags:
         - Usuarios
       summary: Registrar un usuario
+      operationId: usuarios_post_usuarios
       description: >
         Registra un nuevo usuario en Subsonic Festival.
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -112,11 +119,13 @@ paths:
       tags:
         - Usuarios
       summary: Iniciar sesión
+      operationId: usuarios_post_usuarios_login
       description: >
         Comprueba las credenciales de un usuario y permite
         iniciar sesión en la plataforma.
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -160,12 +169,14 @@ paths:
         description: Identificador del usuario
         schema:
           type: integer
+          format: int64
           example: 25
 
     get:
       tags:
         - Usuarios
       summary: Obtener un usuario
+      operationId: usuarios_get_usuarios_idUsuario
       description: >
         Devuelve la información de un usuario concreto.
       responses:
@@ -195,10 +206,12 @@ paths:
       tags:
         - Usuarios
       summary: Modificar un usuario
+      operationId: usuarios_put_usuarios_idUsuario
       description: >
         Modifica los datos del perfil de un usuario.
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -245,6 +258,7 @@ paths:
       tags:
         - Usuarios
       summary: Eliminar un usuario
+      operationId: usuarios_delete_usuarios_idUsuario
       description: >
         Elimina un usuario registrado en la plataforma.
       responses:
@@ -271,19 +285,23 @@ paths:
       tags:
         - Usuarios
       summary: Actualizar el perfil
+      operationId: usuarios_patch_usuarios_idUsuario_perfil
       description: >
         Permite modificar parcialmente los datos del perfil
         de un usuario.
       parameters:
         - name: idUsuario
+          description: Identificador del usuario gestionado por Usuarios.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 25
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -324,18 +342,22 @@ paths:
       tags:
         - Usuarios
       summary: Actualizar foto de perfil
+      operationId: usuarios_put_usuarios_idUsuario_foto
       description: >
         Permite establecer o modificar la foto de perfil de un usuario.
       parameters:
         - name: idUsuario
+          description: Identificador del usuario gestionado por Usuarios.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 25
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -376,14 +398,17 @@ paths:
       tags:
         - Usuarios
       summary: Obtener métodos de pago
+      operationId: usuarios_get_usuarios_idUsuario_metodos_pago
       description: >
         Devuelve los métodos de pago asociados a un usuario.
       parameters:
         - name: idUsuario
+          description: Identificador del usuario gestionado por Usuarios.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 25
 
       responses:
@@ -415,18 +440,22 @@ paths:
       tags:
         - Usuarios
       summary: Añadir método de pago
+      operationId: usuarios_post_usuarios_idUsuario_metodos_pago
       description: >
         Añade un nuevo método de pago al usuario.
       parameters:
         - name: idUsuario
+          description: Identificador del usuario gestionado por Usuarios.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 25
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -467,21 +496,26 @@ paths:
       tags:
         - Usuarios
       summary: Eliminar método de pago
+      operationId: usuarios_delete_usuarios_idUsuario_metodos_pago_idMetodoPago
       description: >
         Elimina uno de los métodos de pago asociados al usuario.
       parameters:
         - name: idUsuario
+          description: Identificador del usuario gestionado por Usuarios.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 25
 
         - name: idMetodoPago
+          description: Identificador del método de pago gestionado por Usuarios.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 4
 
       responses:
@@ -508,18 +542,22 @@ paths:
       tags:
         - Usuarios
       summary: Modificar tipo de usuario
+      operationId: usuarios_patch_usuarios_idUsuario_tipo
       description: >
         Permite modificar el tipo o rol asignado a un usuario.
       parameters:
         - name: idUsuario
+          description: Identificador del usuario gestionado por Usuarios.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 25
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -565,32 +603,39 @@ components:
       properties:
         id:
           type: integer
+          format: int64
           description: Identificador único del usuario
           example: 25
 
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Laura"
 
         apellidos:
+          description: Apellidos del usuario.
           type: string
           example: "García Sánchez"
 
         email:
+          description: Dirección de correo electrónico del usuario.
           type: string
           format: email
           example: "laura@email.com"
 
         telefono:
+          description: Número de teléfono de contacto del usuario.
           type: string
           example: "600123456"
 
         fechaNacimiento:
+          description: Fecha de nacimiento del usuario en formato ISO 8601.
           type: string
           format: date
           example: "2002-05-14"
 
         tipo:
+          description: Tipo del recurso según los valores enumerados.
           type: string
           enum:
             - cliente
@@ -605,6 +650,7 @@ components:
           example: "/imagenes/perfiles/usuario25.jpg"
 
         fechaRegistro:
+          description: Fecha y hora del registro del usuario en formato ISO 8601.
           type: string
           format: date-time
           example: "2027-04-10T12:30:00Z"
@@ -623,33 +669,40 @@ components:
       description: Datos necesarios para registrar un usuario
       properties:
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Laura"
 
         apellidos:
+          description: Apellidos del usuario.
           type: string
           example: "García Sánchez"
 
         email:
+          description: Dirección de correo electrónico del usuario.
           type: string
           format: email
           example: "laura@email.com"
 
         password:
+          description: Contraseña del usuario; solo se admite en solicitudes.
           type: string
           format: password
           example: "Subsonic123"
 
         telefono:
+          description: Número de teléfono de contacto del usuario.
           type: string
           example: "600123456"
 
         fechaNacimiento:
+          description: Fecha de nacimiento del usuario en formato ISO 8601.
           type: string
           format: date
           example: "2002-05-14"
 
         tipo:
+          description: Tipo del recurso según los valores enumerados.
           type: string
           enum:
             - cliente
@@ -669,23 +722,28 @@ components:
       description: Datos para modificar un usuario
       properties:
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Laura"
 
         apellidos:
+          description: Apellidos del usuario.
           type: string
           example: "García Sánchez"
 
         email:
+          description: Dirección de correo electrónico del usuario.
           type: string
           format: email
           example: "laura@email.com"
 
         telefono:
+          description: Número de teléfono de contacto del usuario.
           type: string
           example: "600123456"
 
         fechaNacimiento:
+          description: Fecha de nacimiento del usuario en formato ISO 8601.
           type: string
           format: date
           example: "2002-05-14"
@@ -701,18 +759,22 @@ components:
       description: Datos del perfil que pueden modificarse parcialmente
       properties:
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Laura"
 
         apellidos:
+          description: Apellidos del usuario.
           type: string
           example: "García Sánchez"
 
         telefono:
+          description: Número de teléfono de contacto del usuario.
           type: string
           example: "600123456"
 
         fechaNacimiento:
+          description: Fecha de nacimiento del usuario en formato ISO 8601.
           type: string
           format: date
           example: "2002-05-14"
@@ -723,6 +785,7 @@ components:
       description: Foto asociada al perfil de un usuario
       properties:
         url:
+          description: Ruta de la fotografía de perfil.
           type: string
           example: "/imagenes/perfiles/usuario25.jpg"
 
@@ -735,11 +798,13 @@ components:
       description: Credenciales necesarias para iniciar sesión
       properties:
         email:
+          description: Dirección de correo electrónico del usuario.
           type: string
           format: email
           example: "laura@email.com"
 
         password:
+          description: Contraseña del usuario; solo se admite en solicitudes.
           type: string
           format: password
           example: "Subsonic123"
@@ -754,15 +819,19 @@ components:
       description: Información devuelta después de iniciar sesión
       properties:
         token:
+          description: Token de sesión devuelto tras la autenticación.
           type: string
           example: "eyJhbGciOiJIUzI1NiJ9..."
 
         tipo:
+          description: Tipo del recurso según los valores enumerados.
           type: string
           example: "Bearer"
 
         usuario:
-          $ref: '#/components/schemas/Usuario'
+          description: Datos del usuario autenticado.
+          allOf:
+            - $ref: '#/components/schemas/Usuario'
 
       required:
         - token
@@ -775,10 +844,13 @@ components:
       description: Método de pago asociado a un usuario
       properties:
         id:
+          description: Identificador del método de pago gestionado por Usuarios.
           type: integer
+          format: int64
           example: 4
 
         tipo:
+          description: Tipo del recurso según los valores enumerados.
           type: string
           enum:
             - tarjeta
@@ -786,14 +858,17 @@ components:
           example: tarjeta
 
         titular:
+          description: Nombre del titular del método de pago.
           type: string
           example: "Laura García Sánchez"
 
         ultimosDigitos:
+          description: Últimos cuatro dígitos del método de pago.
           type: string
           example: "4582"
 
         predeterminado:
+          description: Indica si es el método de pago elegido por defecto.
           type: boolean
           example: true
 
@@ -808,6 +883,7 @@ components:
       description: Datos necesarios para añadir un método de pago
       properties:
         tipo:
+          description: Tipo del recurso según los valores enumerados.
           type: string
           enum:
             - tarjeta
@@ -815,18 +891,23 @@ components:
           example: tarjeta
 
         titular:
+          description: Nombre del titular del método de pago.
           type: string
           example: "Laura García Sánchez"
 
         numero:
+          description: Número de tarjeta facilitado al registrar el método de pago.
           type: string
           example: "1234567812344582"
 
         fechaCaducidad:
+          description: Mes y año de caducidad de la tarjeta en formato MM/AA.
           type: string
+          pattern: '^(0[1-9]|1[0-2])/[0-9]{2}$'
           example: "12/29"
 
         predeterminado:
+          description: Indica si es el método de pago elegido por defecto.
           type: boolean
           example: true
 
@@ -839,6 +920,7 @@ components:
       description: Nuevo tipo asignado al usuario
       properties:
         tipo:
+          description: Tipo del recurso según los valores enumerados.
           type: string
           enum:
             - cliente
@@ -855,10 +937,13 @@ components:
       description: Información sobre un error producido en la API
       properties:
         codigo:
+          description: Código HTTP del error.
           type: integer
+          format: int64
           example: 404
 
         mensaje:
+          description: Texto explicativo del resultado o del error.
           type: string
           example: "Usuario no encontrado"
 
