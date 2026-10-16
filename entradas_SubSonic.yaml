@@ -7,6 +7,10 @@ info:
     Permite consultar los tipos de entrada disponibles, realizar compras,
     consultar las entradas de los usuarios, cancelar entradas y validar
     el acceso al festival.
+
+    Entradas consulta Usuarios mediante GET /usuarios/{idUsuario} y
+    GET /usuarios/{idUsuario}/metodos-pago durante la compra. Front-end
+    y Estadísticas consultan aquí los tipos y las entradas de usuarios.
   version: 1.0.0
 
 servers:
@@ -31,6 +35,7 @@ paths:
       tags:
         - Entradas
       summary: Obtener los tipos de entrada
+      operationId: entradas_get_entradas
       description: >
         Devuelve los tipos de entrada disponibles para Subsonic Festival:
         VIP, abono completo y abono de un día.
@@ -87,11 +92,13 @@ paths:
       tags:
         - Entradas
       summary: Crear un tipo de entrada
+      operationId: entradas_post_entradas
       description: >
         Permite crear un nuevo tipo de entrada para el festival.
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -135,12 +142,14 @@ paths:
         description: Identificador del tipo de entrada
         schema:
           type: integer
+          format: int64
           example: 2
 
     get:
       tags:
         - Entradas
       summary: Obtener un tipo de entrada
+      operationId: entradas_get_entradas_idTipoEntrada
       description: >
         Devuelve la información de un tipo de entrada concreto.
 
@@ -171,11 +180,13 @@ paths:
       tags:
         - Entradas
       summary: Modificar un tipo de entrada
+      operationId: entradas_put_entradas_idTipoEntrada
       description: >
         Permite modificar los datos de un tipo de entrada existente.
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -215,6 +226,7 @@ paths:
       tags:
         - Entradas
       summary: Eliminar un tipo de entrada
+      operationId: entradas_delete_entradas_idTipoEntrada
       description: >
         Elimina un tipo de entrada siempre que no existan
         compras asociadas.
@@ -250,6 +262,7 @@ paths:
       tags:
         - Entradas
       summary: Obtener entradas por tipo
+      operationId: entradas_get_entradas_tipo_tipo
       description: >
         Permite consultar la información correspondiente a un tipo
         de entrada: VIP, abono completo o abono de un día.
@@ -302,6 +315,7 @@ paths:
       tags:
         - Entradas
       summary: Obtener entradas disponibles
+      operationId: entradas_get_entradas_disponibles
       description: >
         Devuelve los tipos de entrada que todavía tienen
         unidades disponibles para su compra.
@@ -329,12 +343,21 @@ paths:
       tags:
         - Compras
       summary: Comprar entradas
+      operationId: entradas_post_entradas_comprar
       description: >
+        Consulta síncrona a usuarios GET /usuarios/{idUsuario} (operationId:
+        usuarios_get_usuarios_idUsuario) para comprobar Usuario.id y a usuarios GET
+        /usuarios/{idUsuario}/metodos-pago (operationId:
+        usuarios_get_usuarios_idUsuario_metodos_pago) para comprobar que idMetodoPago pertenece al
+        usuario mediante MetodoPago.id. Después usa idTipoEntrada y cantidad para comprobar stock
+        propio y devuelve CompraEntrada. El contrato actual no incluye una API que ejecute el cobro.
+
         Permite a un usuario comprar una o varias entradas
         para Subsonic Festival.
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -376,13 +399,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /entradas/usuarios/{idUsuario}:
     get:
       tags:
         - Entradas
       summary: Obtener entradas de un usuario
+      operationId: entradas_get_entradas_usuarios_idUsuario
       description: >
+        Consulta síncrona a usuarios GET /usuarios/{idUsuario} (operationId:
+        usuarios_get_usuarios_idUsuario) antes de devolver las EntradaUsuario asociadas a idUsuario.
+
         Devuelve todas las entradas compradas por un usuario.
 
       parameters:
@@ -392,6 +424,7 @@ paths:
           description: Identificador del usuario
           schema:
             type: integer
+            format: int64
             example: 25
 
       responses:
@@ -418,12 +451,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /entradas/compras/{idCompra}:
     get:
       tags:
         - Compras
       summary: Consultar una compra
+      operationId: entradas_get_entradas_compras_idCompra
       description: >
         Devuelve los datos de una compra de entradas concreta.
 
@@ -434,6 +473,7 @@ paths:
           description: Identificador de la compra
           schema:
             type: integer
+            format: int64
             example: 158
 
       responses:
@@ -464,6 +504,7 @@ paths:
       tags:
         - Entradas
       summary: Cancelar una entrada
+      operationId: entradas_patch_entradas_idEntrada_cancelar
       description: >
         Permite cancelar una entrada adquirida por un usuario.
 
@@ -474,6 +515,7 @@ paths:
           description: Identificador de la entrada
           schema:
             type: integer
+            format: int64
             example: 4589
 
       responses:
@@ -511,6 +553,7 @@ paths:
       tags:
         - Validacion
       summary: Validar una entrada
+      operationId: entradas_post_entradas_idEntrada_validar
       description: >
         Comprueba una entrada durante el acceso al festival.
         Si la entrada es válida se marca como utilizada.
@@ -522,6 +565,7 @@ paths:
           description: Identificador de la entrada
           schema:
             type: integer
+            format: int64
             example: 4589
 
       responses:
@@ -559,15 +603,18 @@ paths:
       tags:
         - Entradas
       summary: Consultar estado de una entrada
+      operationId: entradas_get_entradas_idEntrada_estado
       description: >
         Devuelve el estado actual de una entrada comprada.
 
       parameters:
         - name: idEntrada
+          description: Identificador único de la entrada individual.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 4589
 
       responses:
@@ -603,6 +650,7 @@ components:
       properties:
         id:
           type: integer
+          format: int64
           description: Identificador único del tipo de entrada
           example: 2
 
@@ -621,32 +669,40 @@ components:
           example: "Permite acceder al festival durante todos los días"
 
         precio:
+          description: Precio unitario en euros.
           type: number
           format: double
           minimum: 0
           example: 89.99
 
         stockTotal:
+          description: Unidades inicialmente ofertadas del tipo de entrada.
           type: integer
+          format: int64
           minimum: 0
           example: 10000
 
         stockDisponible:
+          description: Unidades del tipo de entrada todavía disponibles.
           type: integer
+          format: int64
           minimum: 0
           example: 2450
 
         fechaInicioValidez:
+          description: Primer día de validez de la entrada, incluido.
           type: string
           format: date
           example: "2027-07-15"
 
         fechaFinValidez:
+          description: Último día de validez de la entrada, incluido.
           type: string
           format: date
           example: "2027-07-18"
 
         estado:
+          description: Estado actual del recurso según los valores enumerados.
           type: string
           enum:
             - disponible
@@ -678,26 +734,32 @@ components:
           example: abono_un_dia
 
         descripcion:
+          description: Texto descriptivo del recurso.
           type: string
           example: "Permite acceder al festival durante un único día"
 
         precio:
+          description: Precio unitario en euros.
           type: number
           format: double
           minimum: 0
           example: 39.99
 
         stockTotal:
+          description: Unidades inicialmente ofertadas del tipo de entrada.
           type: integer
+          format: int64
           minimum: 1
           example: 5000
 
         fechaInicioValidez:
+          description: Primer día de validez de la entrada, incluido.
           type: string
           format: date
           example: "2027-07-16"
 
         fechaFinValidez:
+          description: Último día de validez de la entrada, incluido.
           type: string
           format: date
           example: "2027-07-16"
@@ -715,20 +777,28 @@ components:
       description: Datos necesarios para realizar una compra
       properties:
         idUsuario:
+          description: Identificador del usuario gestionado por Usuarios.
           type: integer
+          format: int64
           example: 25
 
         idTipoEntrada:
+          description: Identificador del tipo gestionado por Entradas.
           type: integer
+          format: int64
           example: 2
 
         cantidad:
+          description: Número de unidades solicitadas o compradas.
           type: integer
+          format: int64
           minimum: 1
           example: 2
 
         idMetodoPago:
+          description: Identificador del método de pago del usuario gestionado por Usuarios.
           type: integer
+          format: int64
           example: 4
 
       required:
@@ -743,18 +813,25 @@ components:
       description: Información de una compra de entradas
       properties:
         idCompra:
+          description: Identificador único de la compra en este servicio.
           type: integer
+          format: int64
           example: 158
 
         idUsuario:
+          description: Identificador del usuario gestionado por Usuarios.
           type: integer
+          format: int64
           example: 25
 
         idTipoEntrada:
+          description: Identificador del tipo gestionado por Entradas.
           type: integer
+          format: int64
           example: 2
 
         tipoEntrada:
+          description: Nombre normalizado del tipo de entrada.
           type: string
           enum:
             - vip
@@ -763,20 +840,25 @@ components:
           example: abono_completo
 
         cantidad:
+          description: Número de unidades solicitadas o compradas.
           type: integer
+          format: int64
           example: 2
 
         precioTotal:
+          description: Importe total de la compra en euros.
           type: number
           format: double
           example: 179.98
 
         fechaCompra:
+          description: Fecha y hora de la compra en formato ISO 8601.
           type: string
           format: date-time
           example: "2027-05-10T17:45:00Z"
 
         estado:
+          description: Estado actual del recurso según los valores enumerados.
           type: string
           enum:
             - completada
@@ -799,18 +881,25 @@ components:
       description: Entrada individual adquirida por un usuario
       properties:
         idEntrada:
+          description: Identificador único de una entrada individual.
           type: integer
+          format: int64
           example: 4589
 
         idUsuario:
+          description: Identificador del usuario gestionado por Usuarios.
           type: integer
+          format: int64
           example: 25
 
         idTipoEntrada:
+          description: Identificador del tipo gestionado por Entradas.
           type: integer
+          format: int64
           example: 2
 
         tipoEntrada:
+          description: Nombre normalizado del tipo de entrada.
           type: string
           enum:
             - vip
@@ -819,25 +908,30 @@ components:
           example: vip
 
         codigo:
+          description: Código único de la entrada usado para validar el acceso.
           type: string
           example: "SUB-2027-004589"
 
         fechaCompra:
+          description: Fecha y hora de la compra en formato ISO 8601.
           type: string
           format: date-time
           example: "2027-05-10T17:45:00Z"
 
         fechaInicioValidez:
+          description: Primer día de validez de la entrada, incluido.
           type: string
           format: date
           example: "2027-07-15"
 
         fechaFinValidez:
+          description: Último día de validez de la entrada, incluido.
           type: string
           format: date
           example: "2027-07-18"
 
         estado:
+          description: Estado actual del recurso según los valores enumerados.
           type: string
           enum:
             - valida
@@ -859,19 +953,24 @@ components:
       description: Resultado de la validación de una entrada
       properties:
         idEntrada:
+          description: Identificador único de una entrada individual.
           type: integer
+          format: int64
           example: 4589
 
         valida:
+          description: Indica si la entrada permite el acceso.
           type: boolean
           example: true
 
         fechaValidacion:
+          description: Fecha y hora de comprobación de la entrada en formato ISO 8601.
           type: string
           format: date-time
           example: "2027-07-16T18:25:00Z"
 
         mensaje:
+          description: Texto explicativo del resultado o del error.
           type: string
           example: "Entrada válida. Acceso permitido."
 
@@ -886,10 +985,13 @@ components:
       description: Estado actual de una entrada
       properties:
         idEntrada:
+          description: Identificador único de una entrada individual.
           type: integer
+          format: int64
           example: 4589
 
         tipoEntrada:
+          description: Nombre normalizado del tipo de entrada.
           type: string
           enum:
             - vip
@@ -898,6 +1000,7 @@ components:
           example: abono_completo
 
         estado:
+          description: Estado actual del recurso según los valores enumerados.
           type: string
           enum:
             - valida
@@ -916,13 +1019,17 @@ components:
       description: Información sobre un error producido en la API
       properties:
         codigo:
+          description: Código HTTP del error.
           type: integer
+          format: int64
           example: 404
 
         mensaje:
+          description: Texto explicativo del resultado o del error.
           type: string
           example: "Entrada no encontrada"
 
       required:
         - codigo
         - mensaje
+
