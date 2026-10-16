@@ -6,6 +6,10 @@ info:
     API encargada de gestionar la escaleta del festival Subsonic.
     Permite administrar las actuaciones o pases, sus horarios,
     los artistas participantes y los espacios donde se realizan.
+
+    Escaleta consulta Espacios mediante GET /espacios/{idEspacio}
+    y GET /espacios/disponibilidad al crear o cambiar actuaciones.
+    Espacios, Front-end y Estadísticas consultan la programación.
   version: 1.0.0
 
 servers:
@@ -23,6 +27,7 @@ paths:
       tags:
         - Escaleta
       summary: Obtener la escaleta
+      operationId: escalet_get_escaleta
       description: >
         Devuelve todas las actuaciones programadas en el festival.
         Se puede filtrar la escaleta por fecha, espacio o artista.
@@ -42,6 +47,7 @@ paths:
           description: Identificador del espacio
           schema:
             type: integer
+            format: int64
             example: 3
 
         - name: idArtista
@@ -50,6 +56,7 @@ paths:
           description: Identificador del artista
           schema:
             type: integer
+            format: int64
             example: 8
 
       responses:
@@ -80,10 +87,18 @@ paths:
       tags:
         - Escaleta
       summary: Crear una actuación
+      operationId: escalet_post_escaleta
       description: >
+        Consulta síncrona a espacios GET /espacios/{idEspacio} (operationId:
+        espacios_get_espacios_idEspacio) para validar Espacio.estado y a espacios GET
+        /espacios/disponibilidad (operationId: espacios_get_espacios_disponibilidad) con fecha,
+        horaInicio y horaFin del ActuacionInput. Comprueba idEspacio y disponible antes de crear la
+        actuación.
+
         Añade una nueva actuación o pase a la escaleta del festival.
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -118,7 +133,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /escaleta/{idActuacion}:
     parameters:
       - name: idActuacion
@@ -127,12 +147,14 @@ paths:
         description: Identificador de la actuación
         schema:
           type: integer
+          format: int64
           example: 12
 
     get:
       tags:
         - Escaleta
       summary: Obtener una actuación
+      operationId: escalet_get_escaleta_idActuacion
       description: >
         Devuelve la información de una actuación concreta de la escaleta.
       responses:
@@ -161,10 +183,17 @@ paths:
       tags:
         - Escaleta
       summary: Modificar una actuación
+      operationId: escalet_put_escaleta_idActuacion
       description: >
+        Consulta síncrona a espacios GET /espacios/{idEspacio} (operationId:
+        espacios_get_espacios_idEspacio) y a espacios GET /espacios/disponibilidad (operationId:
+        espacios_get_espacios_disponibilidad) con los nuevos idEspacio, fecha, horaInicio y horaFin.
+        Excluye la propia actuación al detectar solapamientos.
+
         Modifica todos los datos de una actuación existente.
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -206,10 +235,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       tags:
         - Escaleta
       summary: Eliminar una actuación
+      operationId: escalet_delete_escaleta_idActuacion
       description: >
         Elimina una actuación de la escaleta del festival.
       responses:
@@ -236,6 +272,7 @@ paths:
       tags:
         - Escaleta
       summary: Obtener actuaciones por día
+      operationId: escalet_get_escaleta_dia_fecha
       description: >
         Devuelve todas las actuaciones programadas para una fecha concreta.
       parameters:
@@ -278,6 +315,7 @@ paths:
       tags:
         - Escaleta
       summary: Obtener actuaciones por espacio
+      operationId: escalet_get_escaleta_espacio_idEspacio
       description: >
         Devuelve las actuaciones programadas en un espacio o escenario.
       parameters:
@@ -287,6 +325,7 @@ paths:
           description: Identificador del espacio
           schema:
             type: integer
+            format: int64
             example: 3
 
       responses:
@@ -319,6 +358,7 @@ paths:
       tags:
         - Escaleta
       summary: Obtener actuaciones de un artista
+      operationId: escalet_get_escaleta_artista_idArtista
       description: >
         Devuelve todas las actuaciones programadas para un artista.
       parameters:
@@ -328,6 +368,7 @@ paths:
           description: Identificador del artista
           schema:
             type: integer
+            format: int64
             example: 8
 
       responses:
@@ -360,6 +401,7 @@ paths:
       tags:
         - Escaleta
       summary: Obtener próximas actuaciones
+      operationId: escalet_get_escaleta_proximas
       description: >
         Devuelve las próximas actuaciones del festival ordenadas
         cronológicamente.
@@ -387,7 +429,12 @@ paths:
       tags:
         - Escaleta
       summary: Modificar el horario de una actuación
+      operationId: escalet_patch_escaleta_idActuacion_horario
       description: >
+        Consulta síncrona a espacios GET /espacios/disponibilidad (operationId:
+        espacios_get_espacios_disponibilidad) con fecha, horaInicio y horaFin nuevos; conserva
+        idEspacio de la actuación y excluye su propia franja al comprobar conflictos.
+
         Permite cambiar la fecha o las horas de una actuación
         sin modificar el resto de sus datos.
 
@@ -398,10 +445,12 @@ paths:
           description: Identificador de la actuación
           schema:
             type: integer
+            format: int64
             example: 12
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -443,13 +492,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /escaleta/{idActuacion}/espacio:
     patch:
       tags:
         - Escaleta
       summary: Cambiar el espacio de una actuación
+      operationId: escalet_patch_escaleta_idActuacion_espacio
       description: >
+        Consulta síncrona a espacios GET /espacios/{idEspacio} (operationId:
+        espacios_get_espacios_idEspacio) y a espacios GET /espacios/disponibilidad (operationId:
+        espacios_get_espacios_disponibilidad) para el idEspacio nuevo y el horario actual; exige
+        estado activo y ausencia de solapamiento.
+
         Permite asignar una actuación a otro espacio o escenario.
 
       parameters:
@@ -459,10 +519,12 @@ paths:
           description: Identificador de la actuación
           schema:
             type: integer
+            format: int64
             example: 12
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -504,12 +566,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /escaleta/conflictos:
     get:
       tags:
         - Escaleta
       summary: Consultar conflictos de programación
+      operationId: escalet_get_escaleta_conflictos
       description: >
         Devuelve posibles conflictos existentes en la escaleta,
         como actuaciones asignadas al mismo espacio en horarios
@@ -543,11 +611,13 @@ components:
       properties:
         id:
           type: integer
+          format: int64
           description: Identificador único de la actuación
           example: 12
 
         idArtista:
           type: integer
+          format: int64
           description: Identificador del artista
           example: 8
 
@@ -558,6 +628,7 @@ components:
 
         idEspacio:
           type: integer
+          format: int64
           description: Identificador del espacio donde se realiza
           example: 3
 
@@ -612,30 +683,36 @@ components:
       properties:
         idArtista:
           type: integer
+          format: int64
           description: Identificador del artista
           example: 8
 
         idEspacio:
           type: integer
+          format: int64
           description: Identificador del espacio
           example: 3
 
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-16"
 
         horaInicio:
+          description: Hora local de inicio en formato HH:MM:SS.
           type: string
           format: time
           example: "21:30:00"
 
         horaFin:
+          description: Hora local de finalización en formato HH:MM:SS.
           type: string
           format: time
           example: "23:00:00"
 
         estado:
+          description: Estado actual del recurso según los valores enumerados.
           type: string
           enum:
             - programada
@@ -657,16 +734,19 @@ components:
       description: Datos necesarios para modificar el horario de una actuación
       properties:
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-17"
 
         horaInicio:
+          description: Hora local de inicio en formato HH:MM:SS.
           type: string
           format: time
           example: "22:00:00"
 
         horaFin:
+          description: Hora local de finalización en formato HH:MM:SS.
           type: string
           format: time
           example: "23:30:00"
@@ -683,6 +763,7 @@ components:
       properties:
         idEspacio:
           type: integer
+          format: int64
           description: Nuevo espacio asignado a la actuación
           example: 5
 
@@ -695,18 +776,25 @@ components:
       description: Conflicto detectado en la programación
       properties:
         idActuacion1:
+          description: Identificador de la primera actuación en conflicto.
           type: integer
+          format: int64
           example: 12
 
         idActuacion2:
+          description: Identificador de la segunda actuación en conflicto.
           type: integer
+          format: int64
           example: 15
 
         idEspacio:
+          description: Identificador del espacio gestionado por Espacios.
           type: integer
+          format: int64
           example: 3
 
         descripcion:
+          description: Texto descriptivo del recurso.
           type: string
           example: "Las dos actuaciones coinciden en el mismo espacio y horario."
 
@@ -722,10 +810,13 @@ components:
       description: Información sobre un error producido en la API
       properties:
         codigo:
+          description: Código HTTP del error.
           type: integer
+          format: int64
           example: 404
 
         mensaje:
+          description: Texto explicativo del resultado o del error.
           type: string
           example: "Actuación no encontrada"
 
