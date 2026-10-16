@@ -6,6 +6,11 @@ info:
     API encargada de generar y consultar estadísticas relacionadas
     con el funcionamiento de Subsonic Festival, así como de proporcionar
     recomendaciones a los usuarios a partir de la información disponible.
+
+    Estadísticas consulta Usuarios, Entradas, Merchandising, Espacios
+    y Escaleta mediante sus endpoints existentes. Front-end consulta
+    aquí las recomendaciones de usuario. Los datos históricos de cobro
+    y las preferencias musicales no están completamente expuestos.
   version: 1.0.0
 
 servers:
@@ -27,7 +32,13 @@ paths:
       tags:
         - Estadisticas
       summary: Obtener resumen general del festival
+      operationId: estadisticas_get_estadisticas_resumen
       description: >
+        Agrega consultas síncronas a usuarios GET /usuarios (operationId: usuarios_get_usuarios),
+        escalet GET /escaleta (operationId: escalet_get_escaleta) y espacios GET /espacios
+        (operationId: espacios_get_espacios). Las ventas e ingresos requieren además los datos de
+        compras indicados en los otros endpoints estadísticos.
+
         Devuelve un resumen con los principales datos estadísticos
         del festival, como usuarios registrados, entradas vendidas,
         ingresos y número de actuaciones.
@@ -47,13 +58,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /estadisticas/entradas:
     get:
       tags:
         - Estadisticas
       summary: Obtener estadísticas de entradas
+      operationId: estadisticas_get_estadisticas_entradas
       description: >
+        Consulta síncrona a usuarios GET /usuarios (operationId: usuarios_get_usuarios) y, para cada
+        idUsuario, a entradas GET /entradas/usuarios/{idUsuario} (operationId:
+        entradas_get_entradas_usuarios_idUsuario). EntradaUsuario aporta fechaCompra, tipoEntrada y
+        estado; el ingreso histórico necesita el precio de la compra, que esta lista no expone.
+
         Devuelve información estadística sobre las entradas
         vendidas para el festival.
 
@@ -98,18 +120,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /estadisticas/ingresos:
     get:
       tags:
         - Estadisticas
       summary: Obtener estadísticas de ingresos
+      operationId: estadisticas_get_estadisticas_ingresos
       description: >
+        Consulta síncrona a usuarios GET /usuarios (operationId: usuarios_get_usuarios), entradas
+        GET /entradas/usuarios/{idUsuario} (operationId: entradas_get_entradas_usuarios_idUsuario) y
+        merchandising GET /merchandising/usuarios/{idUsuario}/compras (operationId:
+        merchandising_get_merchandising_usuarios_idUsuario_compras). CompraMerchandising.precioTotal
+        permite sumar merchandising. El ingreso histórico de entradas y de servicios requiere
+        fuentes de datos adicionales que estos contratos no exponen.
+
         Devuelve los ingresos obtenidos por las distintas
         actividades y servicios de Subsonic Festival.
 
       parameters:
         - name: fechaInicio
+          description: Primer día del periodo de consulta, en formato AAAA-MM-DD.
           in: query
           required: false
           schema:
@@ -118,6 +154,7 @@ paths:
             example: "2027-01-01"
 
         - name: fechaFin
+          description: Último día del periodo de consulta, en formato AAAA-MM-DD.
           in: query
           required: false
           schema:
@@ -147,13 +184,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /estadisticas/usuarios:
     get:
       tags:
         - Estadisticas
       summary: Obtener estadísticas de usuarios
+      operationId: estadisticas_get_estadisticas_usuarios
       description: >
+        Consulta síncrona a usuarios GET /usuarios (operationId: usuarios_get_usuarios) y agrupa
+        Usuario.tipo y fechaRegistro.
+
         Devuelve información sobre los usuarios registrados
         en la plataforma y su distribución por tipo.
 
@@ -172,13 +218,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /estadisticas/espacios:
     get:
       tags:
         - Estadisticas
       summary: Obtener estadísticas de uso de espacios
+      operationId: estadisticas_get_estadisticas_espacios
       description: >
+        Consulta síncrona a espacios GET /espacios (operationId: espacios_get_espacios) y a escalet
+        GET /escaleta (operationId: escalet_get_escaleta); agrupa Actuacion.idEspacio y duración
+        para construir UsoEspacio.
+
         Devuelve información sobre la utilización de los diferentes
         espacios del festival.
 
@@ -199,13 +255,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /estadisticas/artistas:
     get:
       tags:
         - Estadisticas
       summary: Obtener estadísticas de artistas
+      operationId: estadisticas_get_estadisticas_artistas
       description: >
+        Consulta síncrona a escalet GET /escaleta (operationId: escalet_get_escaleta) y agrupa
+        Actuacion.idArtista y nombreArtista. El nivelPopularidad requiere una fuente de interés de
+        usuarios adicional.
+
         Devuelve información estadística relacionada con los
         artistas y sus actuaciones en el festival.
 
@@ -226,13 +292,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /estadisticas/merchandising:
     get:
       tags:
         - Estadisticas
       summary: Obtener estadísticas de merchandising
+      operationId: estadisticas_get_estadisticas_merchandising
       description: >
+        Consulta síncrona a usuarios GET /usuarios (operationId: usuarios_get_usuarios) y a
+        merchandising GET /merchandising/usuarios/{idUsuario}/compras (operationId:
+        merchandising_get_merchandising_usuarios_idUsuario_compras) por usuario; suma cantidad y
+        precioTotal de CompraMerchandising no canceladas.
+
         Devuelve información sobre las ventas de productos
         de merchandising del festival.
 
@@ -251,18 +328,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /estadisticas/ventas-por-dia:
     get:
       tags:
         - Estadisticas
       summary: Obtener ventas agrupadas por día
+      operationId: estadisticas_get_estadisticas_ventas_por_dia
       description: >
+        Consulta síncrona a usuarios GET /usuarios (operationId: usuarios_get_usuarios), entradas
+        GET /entradas/usuarios/{idUsuario} (operationId: entradas_get_entradas_usuarios_idUsuario) y
+        merchandising GET /merchandising/usuarios/{idUsuario}/compras (operationId:
+        merchandising_get_merchandising_usuarios_idUsuario_compras). Agrupa por fechaCompra. Los
+        importes históricos de entradas requieren datos de compra adicionales.
+
         Devuelve el número de ventas y los ingresos obtenidos
         durante cada día del periodo indicado.
 
       parameters:
         - name: fechaInicio
+          description: Primer día del periodo de consulta, en formato AAAA-MM-DD.
           in: query
           required: true
           schema:
@@ -271,6 +361,7 @@ paths:
             example: "2027-07-14"
 
         - name: fechaFin
+          description: Último día del periodo de consulta, en formato AAAA-MM-DD.
           in: query
           required: true
           schema:
@@ -302,13 +393,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /recomendaciones/{idUsuario}:
     get:
       tags:
         - Recomendaciones
       summary: Obtener recomendaciones para un usuario
+      operationId: estadisticas_get_recomendaciones_idUsuario
       description: >
+        Consulta síncrona a usuarios GET /usuarios/{idUsuario} (operationId:
+        usuarios_get_usuarios_idUsuario) y a escalet GET /escaleta/proximas (operationId:
+        escalet_get_escaleta_proximas). Usuario no expone preferencias musicales; sin otra fuente,
+        las recomendaciones son generales.
+
         Devuelve recomendaciones personalizadas de actuaciones
         para un usuario.
 
@@ -319,6 +421,7 @@ paths:
           description: Identificador del usuario
           schema:
             type: integer
+            format: int64
             example: 25
 
       responses:
@@ -345,22 +448,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /recomendaciones/{idUsuario}/artistas:
     get:
       tags:
         - Recomendaciones
       summary: Recomendar artistas a un usuario
+      operationId: estadisticas_get_recomendaciones_idUsuario_artistas
       description: >
+        Consulta síncrona a usuarios GET /usuarios/{idUsuario} (operationId:
+        usuarios_get_usuarios_idUsuario) y a escalet GET /escaleta (operationId:
+        escalet_get_escaleta). La escaleta identifica artistas, pero el género y las preferencias
+        musicales no están expuestos por los contratos actuales.
+
         Devuelve artistas del festival que pueden resultar
         de interés para un usuario.
 
       parameters:
         - name: idUsuario
+          description: Identificador del usuario gestionado por Usuarios.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 25
 
       responses:
@@ -387,13 +503,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /recomendaciones/populares:
     get:
       tags:
         - Recomendaciones
       summary: Obtener actuaciones populares
+      operationId: estadisticas_get_recomendaciones_populares
       description: >
+        Consulta síncrona a escalet GET /escaleta (operationId: escalet_get_escaleta). El valor
+        popularidad requiere métricas de interés adicionales; la escaleta solo aporta actuación y
+        horario.
+
         Devuelve las actuaciones con mayor interés entre
         los usuarios del festival.
 
@@ -414,6 +540,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
 
@@ -424,32 +556,45 @@ components:
       description: Resumen de los principales datos del festival
       properties:
         totalUsuarios:
+          description: Número total de usuarios registrados.
           type: integer
+          format: int64
           example: 18500
 
         entradasVendidas:
+          description: Número total de entradas vendidas.
           type: integer
+          format: int64
           example: 14200
 
         ingresosTotales:
+          description: Suma de ingresos disponibles del festival en euros.
           type: number
           format: double
-          example: 852430.50
+          example: 808430.50
 
         totalActuaciones:
+          description: Número total de actuaciones programadas.
           type: integer
+          format: int64
           example: 42
 
         totalArtistas:
+          description: Número de artistas distintos programados.
           type: integer
+          format: int64
           example: 35
 
         totalEspacios:
+          description: Número total de espacios del festival.
           type: integer
+          format: int64
           example: 12
 
         productosVendidos:
+          description: Número de unidades de merchandising vendidas.
           type: integer
+          format: int64
           example: 3250
 
       required:
@@ -466,27 +611,37 @@ components:
       description: Información estadística sobre la venta de entradas
       properties:
         totalVendidas:
+          description: Número de entradas vendidas durante el periodo.
           type: integer
+          format: int64
           example: 14200
 
-        entradasGenerales:
+        abonosUnDia:
+          description: Cantidad de entradas de tipo abono_un_dia vendidas.
           type: integer
+          format: int64
           example: 9500
 
         entradasVIP:
+          description: Cantidad de entradas de tipo vip vendidas.
           type: integer
+          format: int64
           example: 2200
 
-        abonos:
+        abonosCompletos:
+          description: Cantidad de entradas de tipo abono_completo vendidas.
           type: integer
+          format: int64
           example: 2500
 
         ingresos:
+          description: Importe de ingresos del periodo expresado en euros.
           type: number
           format: double
           example: 710000.00
 
         porcentajeVendido:
+          description: Porcentaje del stock de entradas vendido.
           type: number
           format: double
           example: 78.9
@@ -502,30 +657,27 @@ components:
       description: Distribución de los ingresos del festival
       properties:
         ingresosTotales:
+          description: Suma de ingresos disponibles del festival en euros.
           type: number
           format: double
-          example: 852430.50
+          example: 808430.50
 
         ingresosEntradas:
+          description: Importe histórico de entradas en euros; requiere precios de compra.
           type: number
           format: double
           example: 710000.00
 
         ingresosMerchandising:
+          description: Importe de compras de merchandising no canceladas en euros.
           type: number
           format: double
           example: 98430.50
-
-        ingresosServicios:
-          type: number
-          format: double
-          example: 44000.00
 
       required:
         - ingresosTotales
         - ingresosEntradas
         - ingresosMerchandising
-        - ingresosServicios
 
 
     EstadisticasUsuarios:
@@ -533,23 +685,32 @@ components:
       description: Estadísticas de los usuarios de la plataforma
       properties:
         totalUsuarios:
+          description: Número total de usuarios registrados.
           type: integer
+          format: int64
           example: 18500
 
         clientes:
+          description: Número de usuarios con tipo cliente.
           type: integer
+          format: int64
           example: 18250
 
         proveedores:
+          description: Número de usuarios con tipo proveedor.
           type: integer
+          format: int64
           example: 220
 
         administradores:
+          description: Número de usuarios con tipo administrador.
           type: integer
+          format: int64
           example: 30
 
         nuevosUsuarios:
           type: integer
+          format: int64
           description: Usuarios registrados durante el periodo actual
           example: 1250
 
@@ -565,23 +726,30 @@ components:
       description: Estadísticas de utilización de un espacio
       properties:
         idEspacio:
+          description: Identificador del espacio gestionado por Espacios.
           type: integer
+          format: int64
           example: 3
 
         nombreEspacio:
+          description: Nombre del espacio gestionado por Espacios.
           type: string
           example: "Escenario Principal"
 
         numeroEventos:
+          description: Número de actuaciones celebradas en el espacio.
           type: integer
+          format: int64
           example: 12
 
         horasUso:
+          description: Horas acumuladas de uso del espacio.
           type: number
           format: double
           example: 26.5
 
         porcentajeUso:
+          description: Porcentaje de tiempo de uso respecto al periodo disponible.
           type: number
           format: double
           example: 82.5
@@ -599,18 +767,24 @@ components:
       description: Información estadística de un artista
       properties:
         idArtista:
+          description: Identificador del artista referenciado en Escaleta.
           type: integer
+          format: int64
           example: 8
 
         nombreArtista:
+          description: Nombre del artista referenciado por la actuación.
           type: string
           example: "Arde Bogotá"
 
         numeroActuaciones:
+          description: Número de actuaciones del artista.
           type: integer
+          format: int64
           example: 2
 
         nivelPopularidad:
+          description: Puntuación de popularidad; requiere métricas de interés.
           type: number
           format: double
           example: 87.5
@@ -626,20 +800,26 @@ components:
       description: Estadísticas de ventas de merchandising
       properties:
         productosVendidos:
+          description: Número de unidades de merchandising vendidas.
           type: integer
+          format: int64
           example: 3250
 
         ingresos:
+          description: Importe de ingresos del periodo expresado en euros.
           type: number
           format: double
           example: 98430.50
 
         productoMasVendido:
+          description: Nombre del producto con más unidades vendidas.
           type: string
           example: "Camiseta oficial Subsonic 2027"
 
         unidadesProductoMasVendido:
+          description: Unidades vendidas del producto más popular.
           type: integer
+          format: int64
           example: 850
 
       required:
@@ -652,15 +832,19 @@ components:
       description: Ventas realizadas durante un día
       properties:
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-16"
 
         numeroVentas:
+          description: Número de ventas realizadas ese día.
           type: integer
+          format: int64
           example: 1340
 
         ingresos:
+          description: Importe de ingresos del periodo expresado en euros.
           type: number
           format: double
           example: 67450.00
@@ -676,28 +860,36 @@ components:
       description: Actuación recomendada a un usuario
       properties:
         idActuacion:
+          description: Identificador de la actuación gestionada por Escaleta.
           type: integer
+          format: int64
           example: 12
 
         artista:
+          description: Nombre del artista o grupo de la actuación.
           type: string
           example: "Arde Bogotá"
 
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-16"
 
         hora:
+          description: Hora local de la actuación en formato HH:MM:SS.
           type: string
           format: time
           example: "21:30:00"
 
         idEspacio:
+          description: Identificador del espacio gestionado por Espacios.
           type: integer
+          format: int64
           example: 3
 
         motivo:
+          description: Motivo de la indisponibilidad o de la recomendación.
           type: string
           example: "Relacionado con tus artistas de interés"
 
@@ -714,18 +906,23 @@ components:
       description: Artista recomendado a un usuario
       properties:
         idArtista:
+          description: Identificador del artista referenciado en Escaleta.
           type: integer
+          format: int64
           example: 8
 
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Arde Bogotá"
 
         genero:
+          description: Género musical del artista, si existe una fuente de metadatos.
           type: string
           example: "Rock alternativo"
 
         motivo:
+          description: Motivo de la indisponibilidad o de la recomendación.
           type: string
           example: "Similar a otros artistas consultados"
 
@@ -739,28 +936,36 @@ components:
       description: Actuación con mayor interés entre los usuarios
       properties:
         idActuacion:
+          description: Identificador de la actuación gestionada por Escaleta.
           type: integer
+          format: int64
           example: 12
 
         artista:
+          description: Nombre del artista o grupo de la actuación.
           type: string
           example: "Arde Bogotá"
 
         idEspacio:
+          description: Identificador del espacio gestionado por Espacios.
           type: integer
+          format: int64
           example: 3
 
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-16"
 
         hora:
+          description: Hora local de la actuación en formato HH:MM:SS.
           type: string
           format: time
           example: "21:30:00"
 
         popularidad:
+          description: Puntuación de popularidad; requiere métricas de interés.
           type: number
           format: double
           example: 92.4
@@ -778,10 +983,13 @@ components:
       description: Información sobre un error producido en la API
       properties:
         codigo:
+          description: Código HTTP del error.
           type: integer
+          format: int64
           example: 404
 
         mensaje:
+          description: Texto explicativo del resultado o del error.
           type: string
           example: "No se han encontrado datos"
 
