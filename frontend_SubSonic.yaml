@@ -7,6 +7,10 @@ info:
     Proporciona a la interfaz la información necesaria para mostrar
     la página principal, la programación, el perfil del usuario,
     las entradas y el merchandising.
+
+    Front-end consulta Escaleta, Espacios, Usuarios, Entradas,
+    Merchandising y Estadísticas mediante sus endpoints existentes.
+    Cada operación indica la ruta consultada y los datos transformados.
   version: 1.0.0
 
 servers:
@@ -37,7 +41,13 @@ paths:
       tags:
         - Inicio
       summary: Obtener información de la página principal
+      operationId: frontend_get_frontend_inicio
       description: >
+        Consulta síncrona a escalet GET /escaleta/proximas (operationId:
+        escalet_get_escaleta_proximas) y a merchandising GET /merchandising/disponibles
+        (operationId: merchandising_get_merchandising_disponibles); transforma Actuacion en
+        proximasActuaciones y Producto en productosDestacados.
+
         Devuelve la información necesaria para construir la página
         principal de Subsonic Festival, incluyendo próximas actuaciones,
         artistas destacados y productos destacados.
@@ -57,13 +67,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /frontend/programacion:
     get:
       tags:
         - Programacion
       summary: Obtener programación
+      operationId: frontend_get_frontend_programacion
       description: >
+        Consulta síncrona a escalet GET /escaleta (operationId: escalet_get_escaleta) con el filtro
+        fecha si se indica; transforma Actuacion en ActuacionFront.
+
         Devuelve la programación que se mostrará en el Front-end.
         Permite filtrar las actuaciones por fecha.
 
@@ -101,13 +120,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /frontend/programacion/{idActuacion}:
     get:
       tags:
         - Programacion
       summary: Obtener detalle de una actuación
+      operationId: frontend_get_frontend_programacion_idActuacion
       description: >
+        Consulta síncrona a escalet GET /escaleta/{idActuacion} (operationId:
+        escalet_get_escaleta_idActuacion) y a espacios GET /espacios/{idEspacio} (operationId:
+        espacios_get_espacios_idEspacio); usa Actuacion.idEspacio para obtener Espacio.ubicacion y
+        construir DetalleActuacion.
+
         Devuelve la información necesaria para mostrar el detalle
         de una actuación en el Front-end.
 
@@ -118,6 +148,7 @@ paths:
           description: Identificador de la actuación
           schema:
             type: integer
+            format: int64
             example: 12
 
       responses:
@@ -142,13 +173,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /frontend/perfil/{idUsuario}:
     get:
       tags:
         - Perfil
       summary: Obtener información del perfil
+      operationId: frontend_get_frontend_perfil_idUsuario
       description: >
+        Consulta síncrona a usuarios GET /usuarios/{idUsuario} (operationId:
+        usuarios_get_usuarios_idUsuario) y transforma Usuario en PerfilFront.
+
         Devuelve la información necesaria para mostrar el área
         personal de un usuario.
 
@@ -159,6 +199,7 @@ paths:
           description: Identificador del usuario
           schema:
             type: integer
+            format: int64
             example: 25
 
       responses:
@@ -183,13 +224,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /frontend/perfil/{idUsuario}/entradas:
     get:
       tags:
         - Perfil
       summary: Obtener entradas del usuario
+      operationId: frontend_get_frontend_perfil_idUsuario_entradas
       description: >
+        Consulta síncrona a entradas GET /entradas/usuarios/{idUsuario} (operationId:
+        entradas_get_entradas_usuarios_idUsuario) y transforma EntradaUsuario en EntradaFront.
+
         Devuelve las entradas que deben mostrarse en el área
         personal del usuario.
 
@@ -200,6 +250,7 @@ paths:
           description: Identificador del usuario
           schema:
             type: integer
+            format: int64
             example: 25
 
       responses:
@@ -226,22 +277,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /frontend/perfil/{idUsuario}/recomendaciones:
     get:
       tags:
         - Perfil
       summary: Obtener recomendaciones del usuario
+      operationId: frontend_get_frontend_perfil_idUsuario_recomendaciones
       description: >
+        Consulta síncrona a estadisticas GET /recomendaciones/{idUsuario} (operationId:
+        estadisticas_get_recomendaciones_idUsuario) y transforma Recomendacion en
+        RecomendacionFront.
+
         Devuelve las actuaciones recomendadas que se mostrarán
         en el perfil de un usuario.
 
       parameters:
         - name: idUsuario
+          description: Identificador del usuario gestionado por Usuarios.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 25
 
       responses:
@@ -268,13 +331,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /frontend/tienda:
     get:
       tags:
         - Tienda
       summary: Obtener información de la tienda
+      operationId: frontend_get_frontend_tienda
       description: >
+        Consulta síncrona a merchandising GET /merchandising (operationId:
+        merchandising_get_merchandising) con disponible=true y categoria si se solicita; transforma
+        Producto en ProductoFront.
+
         Devuelve los productos de merchandising que deben
         mostrarse en la tienda del Front-end.
 
@@ -317,13 +390,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /frontend/entradas:
     get:
       tags:
         - Inicio
       summary: Obtener entradas disponibles
+      operationId: frontend_get_frontend_entradas
       description: >
+        Consulta síncrona a entradas GET /entradas/disponibles (operationId:
+        entradas_get_entradas_disponibles) y transforma TipoEntrada en TipoEntradaFront.
+
         Devuelve los tipos de entrada que pueden mostrarse
         y comprarse desde el Front-end.
 
@@ -344,12 +426,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /frontend/menu:
     get:
       tags:
         - Navegacion
       summary: Obtener menú de navegación
+      operationId: frontend_get_frontend_menu
       description: >
         Devuelve las opciones de navegación disponibles
         en la aplicación.
@@ -381,29 +469,35 @@ components:
       description: Información necesaria para construir la página principal
       properties:
         nombreFestival:
+          description: Nombre público del festival.
           type: string
           example: "Subsonic Festival"
 
         descripcion:
+          description: Texto descriptivo del recurso.
           type: string
           example: "Festival de música Subsonic 2027"
 
         fechaInicio:
+          description: Primer día del festival en formato ISO 8601.
           type: string
           format: date
           example: "2027-07-15"
 
         fechaFin:
+          description: Último día del festival en formato ISO 8601.
           type: string
           format: date
           example: "2027-07-18"
 
         proximasActuaciones:
+          description: Actuaciones próximas mostradas en la portada.
           type: array
           items:
             $ref: '#/components/schemas/ActuacionFront'
 
         productosDestacados:
+          description: Productos disponibles seleccionados para la portada.
           type: array
           items:
             $ref: '#/components/schemas/ProductoFront'
@@ -420,23 +514,29 @@ components:
       description: Información resumida de una actuación
       properties:
         idActuacion:
+          description: Identificador de la actuación gestionada por Escaleta.
           type: integer
+          format: int64
           example: 12
 
         artista:
+          description: Nombre del artista o grupo de la actuación.
           type: string
           example: "Arde Bogotá"
 
         espacio:
+          description: Nombre del espacio donde se celebra la actuación.
           type: string
           example: "Escenario Principal"
 
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-16"
 
         horaInicio:
+          description: Hora local de inicio en formato HH:MM:SS.
           type: string
           format: time
           example: "21:30:00"
@@ -454,44 +554,57 @@ components:
       description: Información completa de una actuación mostrada al usuario
       properties:
         idActuacion:
+          description: Identificador de la actuación gestionada por Escaleta.
           type: integer
+          format: int64
           example: 12
 
         idArtista:
+          description: Identificador del artista referenciado en Escaleta.
           type: integer
+          format: int64
           example: 8
 
         artista:
+          description: Nombre del artista o grupo de la actuación.
           type: string
           example: "Arde Bogotá"
 
         descripcion:
+          description: Texto descriptivo del recurso.
           type: string
           example: "Actuación de Arde Bogotá en Subsonic Festival"
 
         idEspacio:
+          description: Identificador del espacio gestionado por Espacios.
           type: integer
+          format: int64
           example: 3
 
         espacio:
+          description: Nombre del espacio donde se celebra la actuación.
           type: string
           example: "Escenario Principal"
 
         ubicacion:
+          description: Zona o ubicación del espacio dentro del recinto.
           type: string
           example: "Zona Norte"
 
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-16"
 
         horaInicio:
+          description: Hora local de inicio en formato HH:MM:SS.
           type: string
           format: time
           example: "21:30:00"
 
         horaFin:
+          description: Hora local de finalización en formato HH:MM:SS.
           type: string
           format: time
           example: "23:00:00"
@@ -510,28 +623,35 @@ components:
       description: Información mostrada en el perfil del usuario
       properties:
         idUsuario:
+          description: Identificador del usuario gestionado por Usuarios.
           type: integer
+          format: int64
           example: 25
 
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Laura"
 
         apellidos:
+          description: Apellidos del usuario.
           type: string
           example: "García Sánchez"
 
         email:
+          description: Dirección de correo electrónico del usuario.
           type: string
           format: email
           example: "laura@email.com"
 
         fotoPerfil:
+          description: Ruta de la imagen de perfil del usuario.
           type: string
           nullable: true
           example: "/imagenes/perfiles/usuario25.jpg"
 
         tipoUsuario:
+          description: Tipo de cuenta del usuario.
           type: string
           enum:
             - cliente
@@ -552,18 +672,23 @@ components:
       description: Entrada mostrada en el perfil del usuario
       properties:
         idEntrada:
+          description: Identificador único de una entrada individual.
           type: integer
+          format: int64
           example: 4589
 
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Abono completo"
 
         codigo:
+          description: Código único de la entrada usado para validar el acceso.
           type: string
           example: "SUB-2027-004589"
 
         estado:
+          description: Estado actual del recurso según los valores enumerados.
           type: string
           enum:
             - valida
@@ -583,23 +708,29 @@ components:
       description: Tipo de entrada mostrado en el Front-end
       properties:
         idTipoEntrada:
+          description: Identificador del tipo gestionado por Entradas.
           type: integer
+          format: int64
           example: 2
 
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Abono completo"
 
         descripcion:
+          description: Texto descriptivo del recurso.
           type: string
           example: "Acceso durante todos los días del festival"
 
         precio:
+          description: Precio unitario en euros.
           type: number
           format: double
           example: 89.99
 
         disponible:
+          description: Indica si el recurso está disponible.
           type: boolean
           example: true
 
@@ -615,23 +746,29 @@ components:
       description: Producto mostrado en la tienda
       properties:
         idProducto:
+          description: Identificador del producto gestionado por Merchandising.
           type: integer
+          format: int64
           example: 15
 
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Camiseta Subsonic 2027"
 
         precio:
+          description: Precio unitario en euros.
           type: number
           format: double
           example: 24.99
 
         imagen:
+          description: Ruta de la imagen del producto.
           type: string
           example: "/imagenes/merchandising/camiseta2027.jpg"
 
         disponible:
+          description: Indica si el recurso está disponible.
           type: boolean
           example: true
 
@@ -647,24 +784,30 @@ components:
       description: Recomendación mostrada al usuario
       properties:
         idActuacion:
+          description: Identificador de la actuación gestionada por Escaleta.
           type: integer
+          format: int64
           example: 12
 
         artista:
+          description: Nombre del artista o grupo de la actuación.
           type: string
           example: "Arde Bogotá"
 
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-16"
 
         hora:
+          description: Hora local de la actuación en formato HH:MM:SS.
           type: string
           format: time
           example: "21:30:00"
 
         motivo:
+          description: Motivo de la indisponibilidad o de la recomendación.
           type: string
           example: "Relacionado con tus artistas de interés"
 
@@ -680,14 +823,17 @@ components:
       description: Opción disponible en el menú de navegación
       properties:
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Programación"
 
         ruta:
+          description: Ruta de navegación del Front-end.
           type: string
           example: "/programacion"
 
         requiereAutenticacion:
+          description: Indica si la ruta exige sesión de usuario.
           type: boolean
           example: false
 
@@ -702,10 +848,13 @@ components:
       description: Información sobre un error producido en la API
       properties:
         codigo:
+          description: Código HTTP del error.
           type: integer
+          format: int64
           example: 404
 
         mensaje:
+          description: Texto explicativo del resultado o del error.
           type: string
           example: "Recurso no encontrado"
 
