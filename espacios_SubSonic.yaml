@@ -10,6 +10,10 @@ info:
     El componente Espacios mantiene la información propia de cada espacio
     y su estado operativo. La disponibilidad para una fecha y hora concretas
     se calcula teniendo en cuenta la programación de la escaleta.
+
+    Espacios consulta GET /escaleta para disponibilidad y
+    GET /escaleta/espacio/{idEspacio} para actuaciones y borrado.
+    Escaleta consulta Espacios antes de programar o mover actuaciones.
   version: 1.0.0
 
 servers:
@@ -29,6 +33,7 @@ paths:
         - Espacios
 
       summary: Obtener todos los espacios
+      operationId: espacios_get_espacios
 
       description: >
         Devuelve todos los espacios registrados en el festival.
@@ -94,12 +99,14 @@ paths:
         - Espacios
 
       summary: Crear un espacio
+      operationId: espacios_post_espacios
 
       description: >
         Registra un nuevo espacio dentro del recinto del festival.
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -146,6 +153,7 @@ paths:
         description: Identificador del espacio
         schema:
           type: integer
+          format: int64
           example: 3
 
 
@@ -154,6 +162,7 @@ paths:
         - Espacios
 
       summary: Obtener un espacio
+      operationId: espacios_get_espacios_idEspacio
 
       description: >
         Devuelve toda la información de un espacio concreto.
@@ -187,12 +196,14 @@ paths:
         - Espacios
 
       summary: Modificar un espacio
+      operationId: espacios_put_espacios_idEspacio
 
       description: >
         Modifica los datos generales de un espacio existente.
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -241,8 +252,13 @@ paths:
         - Espacios
 
       summary: Eliminar un espacio
+      operationId: espacios_delete_espacios_idEspacio
 
       description: >
+        Consulta síncrona a escalet GET /escaleta/espacio/{idEspacio} (operationId:
+        escalet_get_escaleta_espacio_idEspacio) antes de eliminar. Si existen actuaciones
+        programadas que lo usan, devuelve 409.
+
         Elimina un espacio del festival siempre que no tenga
         actuaciones u otros elementos asociados.
 
@@ -274,13 +290,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /espacios/activos:
     get:
       tags:
         - Espacios
 
       summary: Obtener espacios activos
+      operationId: espacios_get_espacios_activos
 
       description: >
         Devuelve todos los espacios que están operativos actualmente.
@@ -311,8 +333,13 @@ paths:
         - Espacios
 
       summary: Consultar disponibilidad de espacios
+      operationId: espacios_get_espacios_disponibilidad
 
       description: >
+        Consulta síncrona a escalet GET /escaleta (operationId: escalet_get_escaleta) con el filtro
+        fecha. Compara Actuacion.idEspacio, horaInicio y horaFin con cada Espacio y la franja
+        solicitada; devuelve DisponibilidadEspacio. Una actuación cancelada no bloquea el espacio.
+
         Devuelve los espacios disponibles durante una fecha y
         franja horaria determinadas. Para calcular la disponibilidad
         se tiene en cuenta la programación existente en la escaleta.
@@ -385,13 +412,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /espacios/tipo/{tipo}:
     get:
       tags:
         - Espacios
 
       summary: Obtener espacios por tipo
+      operationId: espacios_get_espacios_tipo_tipo
 
       description: >
         Devuelve los espacios pertenecientes a un tipo determinado.
@@ -445,6 +478,7 @@ paths:
         - Espacios
 
       summary: Modificar el estado de un espacio
+      operationId: espacios_patch_espacios_idEspacio_estado
 
       description: >
         Permite cambiar el estado operativo de un espacio sin
@@ -458,10 +492,12 @@ paths:
           description: Identificador del espacio
           schema:
             type: integer
+            format: int64
             example: 3
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -504,6 +540,7 @@ paths:
         - Espacios
 
       summary: Modificar la capacidad de un espacio
+      operationId: espacios_patch_espacios_idEspacio_capacidad
 
       description: >
         Permite actualizar la capacidad máxima permitida
@@ -517,10 +554,12 @@ paths:
           description: Identificador del espacio
           schema:
             type: integer
+            format: int64
             example: 3
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -563,8 +602,12 @@ paths:
         - Espacios
 
       summary: Obtener actuaciones de un espacio
+      operationId: espacios_get_espacios_idEspacio_actuaciones
 
       description: >
+        Consulta síncrona a escalet GET /escaleta/espacio/{idEspacio} (operationId:
+        escalet_get_escaleta_espacio_idEspacio) y transforma Actuacion en ActuacionEspacio.
+
         Devuelve las actuaciones de la escaleta asociadas
         a un espacio concreto.
 
@@ -576,6 +619,7 @@ paths:
           description: Identificador del espacio
           schema:
             type: integer
+            format: int64
             example: 3
 
       responses:
@@ -603,6 +647,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
 
@@ -616,6 +666,7 @@ components:
 
         id:
           type: integer
+          format: int64
           description: Identificador único del espacio
           example: 3
 
@@ -643,6 +694,7 @@ components:
 
         capacidad:
           type: integer
+          format: int64
           description: Número máximo de personas permitido
           minimum: 1
           example: 15000
@@ -679,10 +731,12 @@ components:
       properties:
 
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Escenario Principal"
 
         tipo:
+          description: Tipo del recurso según los valores enumerados.
           type: string
           enum:
             - escenario
@@ -694,19 +748,24 @@ components:
           example: escenario
 
         ubicacion:
+          description: Zona o ubicación del espacio dentro del recinto.
           type: string
           example: "Zona Norte"
 
         capacidad:
+          description: Aforo máximo de personas permitido en el espacio.
           type: integer
+          format: int64
           minimum: 1
           example: 15000
 
         descripcion:
+          description: Texto descriptivo del recurso.
           type: string
           example: "Escenario principal del festival."
 
         estado:
+          description: Estado actual del recurso según los valores enumerados.
           type: string
           enum:
             - activo
@@ -729,6 +788,7 @@ components:
       properties:
 
         estado:
+          description: Estado actual del recurso según los valores enumerados.
           type: string
           enum:
             - activo
@@ -747,7 +807,9 @@ components:
       properties:
 
         capacidad:
+          description: Aforo máximo de personas permitido en el espacio.
           type: integer
+          format: int64
           minimum: 1
           example: 12000
 
@@ -762,33 +824,41 @@ components:
       properties:
 
         idEspacio:
+          description: Identificador del espacio gestionado por Espacios.
           type: integer
+          format: int64
           example: 3
 
         nombreEspacio:
+          description: Nombre del espacio gestionado por Espacios.
           type: string
           example: "Escenario Principal"
 
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-16"
 
         horaInicio:
+          description: Hora local de inicio en formato HH:MM:SS.
           type: string
           format: time
           example: "20:00:00"
 
         horaFin:
+          description: Hora local de finalización en formato HH:MM:SS.
           type: string
           format: time
           example: "22:00:00"
 
         disponible:
+          description: Indica si el recurso está disponible.
           type: boolean
           example: false
 
         motivo:
+          description: Motivo de la indisponibilidad o de la recomendación.
           type: string
           nullable: true
           example: "Existe una actuación programada de 21:30 a 23:00"
@@ -809,28 +879,36 @@ components:
       properties:
 
         idActuacion:
+          description: Identificador de la actuación gestionada por Escaleta.
           type: integer
+          format: int64
           example: 12
 
         idArtista:
+          description: Identificador del artista referenciado en Escaleta.
           type: integer
+          format: int64
           example: 8
 
         nombreArtista:
+          description: Nombre del artista referenciado por la actuación.
           type: string
           example: "Arde Bogotá"
 
         fecha:
+          description: Fecha del evento o del registro, en formato ISO 8601 (AAAA-MM-DD).
           type: string
           format: date
           example: "2027-07-16"
 
         horaInicio:
+          description: Hora local de inicio en formato HH:MM:SS.
           type: string
           format: time
           example: "21:30:00"
 
         horaFin:
+          description: Hora local de finalización en formato HH:MM:SS.
           type: string
           format: time
           example: "23:00:00"
@@ -849,13 +927,17 @@ components:
       properties:
 
         codigo:
+          description: Código HTTP del error.
           type: integer
+          format: int64
           example: 404
 
         mensaje:
+          description: Texto explicativo del resultado o del error.
           type: string
           example: "Espacio no encontrado"
 
       required:
         - codigo
         - mensaje
+
