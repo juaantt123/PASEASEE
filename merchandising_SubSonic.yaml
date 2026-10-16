@@ -6,6 +6,10 @@ info:
     API encargada de gestionar los productos de merchandising
     de Subsonic Festival, incluyendo el catálogo de productos,
     el stock disponible y las compras realizadas por los usuarios.
+
+    Merchandising consulta Usuarios para validar al comprador y su
+    método de pago. Front-end consume el catálogo y Estadísticas
+    consume los datos de compras por usuario.
   version: 1.0.0
 
 servers:
@@ -30,6 +34,7 @@ paths:
       tags:
         - Productos
       summary: Obtener productos de merchandising
+      operationId: merchandising_get_merchandising
       description: >
         Devuelve todos los productos de merchandising disponibles.
         Permite filtrar los productos por categoría y disponibilidad.
@@ -86,12 +91,14 @@ paths:
       tags:
         - Productos
       summary: Crear un producto
+      operationId: merchandising_post_merchandising
       description: >
         Añade un nuevo producto al catálogo de merchandising
         de Subsonic Festival.
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -135,12 +142,14 @@ paths:
         description: Identificador del producto
         schema:
           type: integer
+          format: int64
           example: 15
 
     get:
       tags:
         - Productos
       summary: Obtener un producto
+      operationId: merchandising_get_merchandising_idProducto
       description: >
         Devuelve la información de un producto de merchandising concreto.
 
@@ -171,11 +180,13 @@ paths:
       tags:
         - Productos
       summary: Modificar un producto
+      operationId: merchandising_put_merchandising_idProducto
       description: >
         Modifica los datos de un producto existente.
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -215,6 +226,7 @@ paths:
       tags:
         - Productos
       summary: Eliminar un producto
+      operationId: merchandising_delete_merchandising_idProducto
       description: >
         Elimina un producto del catálogo de merchandising.
 
@@ -249,6 +261,7 @@ paths:
       tags:
         - Productos
       summary: Obtener productos disponibles
+      operationId: merchandising_get_merchandising_disponibles
       description: >
         Devuelve los productos que tienen unidades disponibles
         para su compra.
@@ -276,15 +289,18 @@ paths:
       tags:
         - Stock
       summary: Consultar stock de un producto
+      operationId: merchandising_get_merchandising_idProducto_stock
       description: >
         Devuelve el número de unidades disponibles de un producto.
 
       parameters:
         - name: idProducto
+          description: Identificador del producto gestionado por Merchandising.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 15
 
       responses:
@@ -314,20 +330,24 @@ paths:
       tags:
         - Stock
       summary: Actualizar stock de un producto
+      operationId: merchandising_patch_merchandising_idProducto_stock
       description: >
         Permite modificar el número de unidades disponibles
         de un producto.
 
       parameters:
         - name: idProducto
+          description: Identificador del producto gestionado por Merchandising.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 15
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -368,12 +388,21 @@ paths:
       tags:
         - Compras
       summary: Comprar merchandising
+      operationId: merchandising_post_merchandising_compras
       description: >
-        Permite a un usuario realizar la compra de uno o varios
-        productos de merchandising.
+        Consulta síncrona a usuarios GET /usuarios/{idUsuario} (operationId:
+        usuarios_get_usuarios_idUsuario) y a usuarios GET /usuarios/{idUsuario}/metodos-pago
+        (operationId: usuarios_get_usuarios_idUsuario_metodos_pago). Comprueba Usuario.id y
+        MetodoPago.id frente a idUsuario e idMetodoPago; después valida Producto.stock y devuelve
+        CompraMerchandising. Cada petición compra un único idProducto. El cobro externo no figura en
+        estos contratos.
+
+        Permite a un usuario comprar una cantidad de un único
+        producto de merchandising por solicitud.
 
       requestBody:
         required: true
+        description: Atributos de la solicitud definidos en el esquema referenciado.
         content:
           application/json:
             schema:
@@ -415,21 +444,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /merchandising/compras/{idCompra}:
     get:
       tags:
         - Compras
       summary: Consultar una compra
+      operationId: merchandising_get_merchandising_compras_idCompra
       description: >
         Devuelve los datos de una compra de merchandising.
 
       parameters:
         - name: idCompra
+          description: Identificador único de la compra.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 245
 
       responses:
@@ -460,7 +497,12 @@ paths:
       tags:
         - Compras
       summary: Obtener compras de un usuario
+      operationId: merchandising_get_merchandising_usuarios_idUsuario_compras
       description: >
+        Consulta síncrona a usuarios GET /usuarios/{idUsuario} (operationId:
+        usuarios_get_usuarios_idUsuario) para confirmar idUsuario antes de devolver sus
+        CompraMerchandising.
+
         Devuelve todas las compras de merchandising realizadas
         por un usuario.
 
@@ -471,6 +513,7 @@ paths:
           description: Identificador del usuario
           schema:
             type: integer
+            format: int64
             example: 25
 
       responses:
@@ -497,22 +540,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
+        '503':
+          description: Servicio requerido no disponible; no se puede completar la operación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /merchandising/compras/{idCompra}/cancelar:
     patch:
       tags:
         - Compras
       summary: Cancelar una compra
+      operationId: merchandising_patch_merchandising_compras_idCompra_cancelar
       description: >
         Permite cancelar una compra de merchandising
         siempre que todavía pueda ser cancelada.
 
       parameters:
         - name: idCompra
+          description: Identificador único de la compra.
           in: path
           required: true
           schema:
             type: integer
+            format: int64
             example: 245
 
       responses:
@@ -555,18 +606,22 @@ components:
       properties:
         id:
           type: integer
+          format: int64
           description: Identificador único del producto
           example: 15
 
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Camiseta Subsonic 2027"
 
         descripcion:
+          description: Texto descriptivo del recurso.
           type: string
           example: "Camiseta oficial de Subsonic Festival 2027"
 
         categoria:
+          description: Categoría del producto de merchandising.
           type: string
           enum:
             - camiseta
@@ -577,21 +632,26 @@ components:
           example: camiseta
 
         precio:
+          description: Precio unitario en euros.
           type: number
           format: double
           minimum: 0
           example: 24.99
 
         stock:
+          description: Unidades disponibles del producto.
           type: integer
+          format: int64
           minimum: 0
           example: 350
 
         imagen:
+          description: Ruta de la imagen del producto.
           type: string
           example: "/imagenes/merchandising/camiseta2027.jpg"
 
         disponible:
+          description: Indica si el recurso está disponible.
           type: boolean
           example: true
 
@@ -609,14 +669,17 @@ components:
       description: Datos necesarios para crear o modificar un producto
       properties:
         nombre:
+          description: Nombre visible del recurso.
           type: string
           example: "Camiseta Subsonic 2027"
 
         descripcion:
+          description: Texto descriptivo del recurso.
           type: string
           example: "Camiseta oficial del festival"
 
         categoria:
+          description: Categoría del producto de merchandising.
           type: string
           enum:
             - camiseta
@@ -627,17 +690,21 @@ components:
           example: camiseta
 
         precio:
+          description: Precio unitario en euros.
           type: number
           format: double
           minimum: 0
           example: 24.99
 
         stock:
+          description: Unidades disponibles del producto.
           type: integer
+          format: int64
           minimum: 0
           example: 350
 
         imagen:
+          description: Ruta de la imagen del producto.
           type: string
           example: "/imagenes/merchandising/camiseta2027.jpg"
 
@@ -653,15 +720,20 @@ components:
       description: Información de stock de un producto
       properties:
         idProducto:
+          description: Identificador del producto gestionado por Merchandising.
           type: integer
+          format: int64
           example: 15
 
         stock:
+          description: Unidades disponibles del producto.
           type: integer
+          format: int64
           minimum: 0
           example: 350
 
         disponible:
+          description: Indica si el recurso está disponible.
           type: boolean
           example: true
 
@@ -676,7 +748,9 @@ components:
       description: Nuevo stock disponible para un producto
       properties:
         stock:
+          description: Unidades disponibles del producto.
           type: integer
+          format: int64
           minimum: 0
           example: 400
 
@@ -689,19 +763,26 @@ components:
       description: Datos necesarios para comprar un producto
       properties:
         idUsuario:
+          description: Identificador del usuario gestionado por Usuarios.
           type: integer
+          format: int64
           example: 25
 
         idProducto:
+          description: Identificador del producto gestionado por Merchandising.
           type: integer
+          format: int64
           example: 15
 
         cantidad:
+          description: Número de unidades solicitadas o compradas.
           type: integer
+          format: int64
           minimum: 1
           example: 2
 
         talla:
+          description: Talla elegida para la prenda, cuando procede.
           type: string
           nullable: true
           enum:
@@ -714,7 +795,9 @@ components:
           example: M
 
         idMetodoPago:
+          description: Identificador del método de pago del usuario gestionado por Usuarios.
           type: integer
+          format: int64
           example: 4
 
       required:
@@ -729,37 +812,49 @@ components:
       description: Compra de merchandising realizada por un usuario
       properties:
         idCompra:
+          description: Identificador único de la compra en este servicio.
           type: integer
+          format: int64
           example: 245
 
         idUsuario:
+          description: Identificador del usuario gestionado por Usuarios.
           type: integer
+          format: int64
           example: 25
 
         idProducto:
+          description: Identificador del producto gestionado por Merchandising.
           type: integer
+          format: int64
           example: 15
 
         cantidad:
+          description: Número de unidades solicitadas o compradas.
           type: integer
+          format: int64
           example: 2
 
         talla:
+          description: Talla elegida para la prenda, cuando procede.
           type: string
           nullable: true
           example: M
 
         precioTotal:
+          description: Importe total de la compra en euros.
           type: number
           format: double
           example: 49.98
 
         fechaCompra:
+          description: Fecha y hora de la compra en formato ISO 8601.
           type: string
           format: date-time
           example: "2027-07-10T16:35:00Z"
 
         estado:
+          description: Estado actual del recurso según los valores enumerados.
           type: string
           enum:
             - realizada
@@ -783,13 +878,18 @@ components:
       description: Información sobre un error producido en la API
       properties:
         codigo:
+          description: Código HTTP del error.
           type: integer
+          format: int64
           example: 404
 
         mensaje:
+          description: Texto explicativo del resultado o del error.
           type: string
           example: "Producto no encontrado"
 
       required:
         - codigo
         - mensaje
+
+
