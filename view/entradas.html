@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#09090d">
+    <title>Entradas | Subsonic Festival 2026</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <a class="logo" href="index.html" aria-label="Subsonic Fest, inicio">SUBSONIC<span>FEST</span></a>
+        <nav aria-label="Navegación principal">
+            <ul class="nav-links">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="#entradas" class="active" aria-current="page">Entradas</a></li>
+                <li><a href="#" onclick="navegarA('escaleta')">Escaleta</a></li>
+                <li><a href="#" onclick="navegarA('tienda')">Tienda</a></li>
+            </ul>
+        </nav>
+        <button class="menu-toggle" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false">
+            ☰
+        </button>
+    </header>
+
+    <main id="entradas" class="tickets-page">
+        <section class="tickets-hero">
+            <a class="back-link" href="index.html">&larr; Volver al inicio</a>
+            <span class="badge">EDICIÓN 2026 · 3 DÍAS</span>
+            <h1>Tu acceso a <span class="gradient-text">SUBSONIC</span></h1>
+            <p>Elige cómo quieres vivir el festival. La información de venta y precios se anunciará próximamente.</p>
+        </section>
+
+        <section class="tickets-section" aria-labelledby="ticket-options-title">
+            <div class="tickets-heading">
+                <div>
+                    <span class="eyebrow">ENTRADAS Y ABONOS</span>
+                    <h2 id="ticket-options-title">Encuentra tu pase</h2>
+                </div>
+                <p>Tres formas de formar parte de la experiencia.</p>
+            </div>
+
+            <div class="ticket-grid">
+                <article class="ticket-card">
+                    <div class="ticket-topline">
+                        <span class="ticket-icon" aria-hidden="true">◷</span>
+                        <span class="ticket-type">UN DÍA</span>
+                    </div>
+                    <h3>Entrada de día</h3>
+                    <p class="ticket-description">Vive una jornada completa de música, escenarios y arte inmersivo.</p>
+                    <div class="ticket-price">Próximamente <span>precio por confirmar</span></div>
+                    <ul class="ticket-benefits">
+                        <li>Acceso al recinto durante un día</li>
+                        <li>Acceso a los escenarios generales</li>
+                        <li>Programación completa de la jornada</li>
+                    </ul>
+                    <button class="btn ticket-button" type="button" disabled>Venta próximamente</button>
+                </article>
+
+                <article class="ticket-card ticket-card-featured">
+                    <div class="ticket-ribbon">MÁS POPULAR</div>
+                    <div class="ticket-topline">
+                        <span class="ticket-icon" aria-hidden="true">✦</span>
+                        <span class="ticket-type">TRES DÍAS</span>
+                    </div>
+                    <h3>Abono general</h3>
+                    <p class="ticket-description">No te pierdas nada: disfruta del festival de principio a fin.</p>
+                    <div class="ticket-price">Próximamente <span>precio por confirmar</span></div>
+                    <ul class="ticket-benefits">
+                        <li>Acceso al recinto los tres días</li>
+                        <li>Acceso a los escenarios generales</li>
+                        <li>Libertad para descubrir todo el festival</li>
+                    </ul>
+                    <button class="btn btn-primary ticket-button" type="button" disabled>Venta próximamente</button>
+                </article>
+
+                <article class="ticket-card">
+                    <div class="ticket-topline">
+                        <span class="ticket-icon" aria-hidden="true">✧</span>
+                        <span class="ticket-type">EXPERIENCIA VIP</span>
+                    </div>
+                    <h3>Abono VIP</h3>
+                    <p class="ticket-description">Una experiencia premium para disfrutar cada momento con más comodidad.</p>
+                    <div class="ticket-price">Próximamente <span>precio por confirmar</span></div>
+                    <ul class="ticket-benefits">
+                        <li>Acceso al recinto los tres días</li>
+                        <li>Acceso a la zona VIP</li>
+                        <li>Más detalles de ventajas próximamente</li>
+                    </ul>
+                    <button class="btn ticket-button" type="button" disabled>Venta próximamente</button>
+                </article>
+            </div>
+
+            <p class="tickets-note">Los precios, las fechas de venta y las condiciones de acceso se publicarán próximamente.</p>
+        </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite">Redirigiendo...</div>
+
+    <footer>
+        <p>&copy; 2026 Subsonic Festival. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

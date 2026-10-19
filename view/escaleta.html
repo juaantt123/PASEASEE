@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#09090d">
+    <title>Escaleta y Line-up | Subsonic Festival 2026</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <a class="logo" href="index.html" aria-label="Subsonic Fest, inicio">SUBSONIC<span>FEST</span></a>
+        <nav aria-label="Navegación principal">
+            <ul class="nav-links">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="entradas.html">Entradas</a></li>
+                <li><a href="#escaleta" class="active" aria-current="page">Escaleta</a></li>
+                <li><a href="tienda.html">Tienda</a></li>
+            </ul>
+        </nav>
+        <button class="menu-toggle" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false">
+            ☰
+        </button>
+    </header>
+
+    <main id="escaleta" class="tickets-page">
+        <section class="tickets-hero">
+            <a class="back-link" href="index.html">&larr; Volver al inicio</a>
+            <span class="badge">EDICIÓN 2026 · LINE-UP</span>
+            <h1>Prepárate para el <span class="gradient-text">RITMO</span></h1>
+            <p>Tres días, varios escenarios y música sin pausa. Los artistas y horarios se anunciarán próximamente.</p>
+        </section>
+
+        <section class="tickets-section" aria-labelledby="schedule-title">
+            <div class="tickets-heading">
+                <div>
+                    <span class="eyebrow">DESCUBRE LOS ESCENARIOS</span>
+                    <h2 id="schedule-title">La escaleta</h2>
+                </div>
+                <p>Estamos preparando la programación de esta edición.</p>
+            </div>
+
+            <div class="stage-grid">
+                <article class="stage-card">
+                    <div class="stage-visual stage-visual-main" aria-hidden="true"><span>01</span></div>
+                    <div class="stage-content">
+                        <span class="stage-label">EL ESCENARIO PRINCIPAL</span>
+                        <h3>MAIN STAGE</h3>
+                        <p>El centro de la experiencia Subsonic: grandes sets, sonido envolvente y visuales inmersivos.</p>
+                        <div class="stage-status"><span></span> Artistas y horarios próximamente</div>
+                    </div>
+                </article>
+
+                <article class="stage-card">
+                    <div class="stage-visual stage-visual-underground" aria-hidden="true"><span>02</span></div>
+                    <div class="stage-content">
+                        <span class="stage-label">SONIDOS ALTERNATIVOS</span>
+                        <h3>UNDERGROUND</h3>
+                        <p>Explora nuevas frecuencias y descubre sesiones que llevan la electrónica por otros caminos.</p>
+                        <div class="stage-status"><span></span> Artistas y horarios próximamente</div>
+                    </div>
+                </article>
+
+                <article class="stage-card">
+                    <div class="stage-visual stage-visual-chill" aria-hidden="true"><span>03</span></div>
+                    <div class="stage-content">
+                        <span class="stage-label">BAJA LAS REVOLUCIONES</span>
+                        <h3>CHILL GARDEN</h3>
+                        <p>Un espacio para desconectar, recargar energía y disfrutar de un ambiente más relajado.</p>
+                        <div class="stage-status"><span></span> Artistas y horarios próximamente</div>
+                    </div>
+                </article>
+            </div>
+
+            <aside class="schedule-notice">
+                <span class="schedule-notice-icon" aria-hidden="true">♫</span>
+                <div>
+                    <h3>El line-up está en camino</h3>
+                    <p>Publicaremos aquí los artistas, los escenarios y los horarios cuando se confirme la programación.</p>
+                </div>
+            </aside>
+        </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite">Redirigiendo...</div>
+
+    <footer>
+        <p>&copy; 2026 Subsonic Festival. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
