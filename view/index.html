@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subsonic Festival | Inicio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Barra de navegación -->
+    <header class="navbar">
+        <div class="logo">SUBSONIC<span>FEST</span></div>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="#inicio" class="active">Inicio</a></li>
+                <li><a href="#" onclick="navegarA('entradas')">Entradas</a></li>
+                <li><a href="#" onclick="navegarA('escaleta')">Escaleta</a></li>
+                <li><a href="#" onclick="navegarA('tienda')">Tienda</a></li>
+            </ul>
+        </nav>
+        <button class="menu-toggle" id="mobile-menu" aria-label="Abrir menú">
+            ☰
+        </button>
+    </header>
+
+    <!-- Sección Principal (Hero) -->
+    <main id="inicio">
+        <section class="hero">
+            <div class="hero-content">
+                <span class="badge">EDICIÓN 2026</span>
+                <h1>VIVE LA EXPERIENCIA <span class="gradient-text">SUBSONIC</span></h1>
+                <p>El festival definitivo de música electrónica y arte inmersivo. Prepárate para tres días de sonido sin límites.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" onclick="navegarA('entradas')">Comprar Entradas</button>
+                    <button class="btn btn-secondary" onclick="navegarA('escaleta')">Ver Horarios</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Accesos directos a los 3 módulos principales -->
+        <section class="accesos-container">
+            <h2 class="section-title">Explora el Festival</h2>
+            
+            <div class="cards-grid">
+                <!-- Tarjeta 1: Entradas -->
+                <article class="card" onclick="navegarA('entradas')">
+                    <div class="card-icon">🎟️</div>
+                    <h3>Entradas y Abonos</h3>
+                    <p>Consigue tu pase general, acceso VIP o entradas de día antes de que se agoten los tramos actuales.</p>
+                    <span class="card-link">Ir a Entradas &rarr;</span>
+                </article>
+
+                <!-- Tarjeta 2: Escaleta -->
+                <article class="card" onclick="navegarA('escaleta')">
+                    <div class="card-icon">🕒</div>
+                    <h3>Escaleta y Line-up</h3>
+                    <p>Consulta los horarios por escenario, organiza tu ruta de artistas y no te pierdas ningún set en directo.</p>
+                    <span class="card-link">Ver Escaleta &rarr;</span>
+                </article>
+
+                <!-- Tarjeta 3: Tienda de objetos -->
+                <article class="card" onclick="navegarA('tienda')">
+                    <div class="card-icon">👕</div>
+                    <h3>Tienda de Objetos</h3>
+                    <p>Hazte con el merchandising oficial, recarga tu pulsera cashless y reserva kits de supervivencia para el festival.</p>
+                    <span class="card-link">Visitar Tienda &rarr;</span>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <!-- Notificación flotante (Toast) para probar la navegación -->
+    <div id="toast" class="toast">Redirigiendo...</div>
+
+    <!-- Pie de página -->
+    <footer>
+        <p>&copy; 2026 Subsonic Festival. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
