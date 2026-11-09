@@ -38,65 +38,14 @@
                     <span class="eyebrow">ENTRADAS Y ABONOS</span>
                     <h2 id="ticket-options-title">Encuentra tu pase</h2>
                 </div>
-                <p>Tres formas de formar parte de la experiencia.</p>
+                <p>Catálogo y precios cargados desde el servicio de Entradas.</p>
             </div>
 
-            <div class="ticket-grid">
-                <article class="ticket-card">
-                    <div class="ticket-topline">
-                        <span class="ticket-icon" aria-hidden="true">◷</span>
-                        <span class="ticket-type">UN DÍA</span>
-                    </div>
-                    <h3>Entrada de día</h3>
-                    <p class="ticket-description">Vive una jornada completa de música, escenarios y arte inmersivo.</p>
-                    <div class="ticket-price">25 € <span>por entrada · un día</span></div>
-                    <ul class="ticket-benefits">
-                        <li>Acceso al recinto durante un día</li>
-                        <li>Acceso a los escenarios generales</li>
-                        <li>Programación completa de la jornada</li>
-                    </ul>
-                    <a class="btn ticket-button ticket-button-alt" href="comprar.html?tipo=dia">Comprar entrada</a>
-                </article>
-
-                <article class="ticket-card ticket-card-featured">
-                    <div class="ticket-ribbon">MÁS POPULAR</div>
-                    <div class="ticket-topline">
-                        <span class="ticket-icon" aria-hidden="true">✦</span>
-                        <span class="ticket-type">TRES DÍAS</span>
-                    </div>
-                    <h3>Abono general</h3>
-                    <p class="ticket-description">No te pierdas nada: disfruta del festival de principio a fin.</p>
-                    <div class="ticket-price">60 € <span>por abono · tres días</span></div>
-                    <ul class="ticket-benefits">
-                        <li>Acceso al recinto los tres días</li>
-                        <li>Acceso a los escenarios generales</li>
-                        <li>Libertad para descubrir todo el festival</li>
-                    </ul>
-                    <a class="btn btn-primary ticket-button" href="comprar.html?tipo=abono">Comprar abono</a>
-                </article>
-
-                <article class="ticket-card">
-                    <div class="ticket-topline">
-                        <span class="ticket-icon" aria-hidden="true">✧</span>
-                        <span class="ticket-type">EXPERIENCIA VIP</span>
-                    </div>
-                    <h3>Abono VIP</h3>
-                    <p class="ticket-description">Una experiencia premium para disfrutar cada momento con más comodidad.</p>
-                    <div class="ticket-price">100 € <span>por abono VIP · tres días</span></div>
-                    <ul class="ticket-benefits">
-                        <li>Acceso al recinto los tres días</li>
-                        <li>Acceso a los escenarios generales</li>
-                        <li>Libertad para descubrir todo el festival</li>
-                        <li>Acceso a la zona VIP</li>
-                        <li>Comida y bebida con descuento</li>
-                        <li>Acceso a la zona de camerinos</li>
-                        <li>Descuentos en la tienda del festival</li>
-                    </ul>
-                    <a class="btn ticket-button ticket-button-alt" href="comprar.html?tipo=vip">Comprar abono VIP</a>
-                </article>
+            <div class="ticket-grid" id="ticket-catalog" aria-live="polite">
+                <p id="ticket-catalog-message">Conectando con el servicio de Entradas…</p>
             </div>
 
-            <p class="tickets-note">Este formulario es una demostración: no se realizará ningún cobro. Las fechas de venta y las condiciones de acceso se publicarán próximamente.</p>
+            <p class="tickets-note">Compra demostrativa: el servicio registra la reserva y actualiza el stock, pero no realiza ningún cobro.</p>
         </section>
     </main>
 
@@ -107,5 +56,6 @@
     </footer>
 
     <script src="app.js"></script>
+    <script src="entradas.js"></script>
 </body>
 </html>

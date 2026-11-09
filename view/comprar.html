@@ -29,14 +29,14 @@
             <a class="back-link" href="entradas.html">← Volver a la pantalla de entradas</a>
             <span class="badge">EDICIÓN 2026 · RESERVA DEMOSTRATIVA</span>
             <h1>Prepara tu <span class="gradient-text">COMPRA</span></h1>
-            <p>Indica tus datos y el tipo de entrada. Este formulario es una demostración y no realiza cobros.</p>
+            <p>Selecciona una entrada disponible y registra una compra demostrativa en la API.</p>
         </section>
 
         <section class="checkout-section" aria-labelledby="checkout-title">
             <div class="checkout-heading">
                 <span class="eyebrow">DATOS DE LA RESERVA</span>
-                <h2 id="checkout-title">Información del comprador</h2>
-                <p>Los campos marcados con * son obligatorios.</p>
+                <h2 id="checkout-title">Confirma tu compra</h2>
+                <p>La compra se asociará a la cuenta con la que has iniciado sesión.</p>
             </div>
 
             <div class="checkout-layout">
@@ -45,10 +45,8 @@
                         <legend>Tu entrada</legend>
                         <div class="checkout-field">
                             <label for="ticket-type">Tipo de entrada *</label>
-                            <select id="ticket-type" required>
-                                <option value="dia">Entrada de día</option>
-                                <option value="abono">Abono general (3 días)</option>
-                                <option value="vip">Abono VIP</option>
+                            <select id="ticket-type" required disabled>
+                                <option value="">Cargando catálogo…</option>
                             </select>
                         </div>
                         <div class="checkout-field">
@@ -59,24 +57,14 @@
                     </fieldset>
 
                     <fieldset class="checkout-fieldset">
-                        <legend>Datos de contacto</legend>
-                        <div class="checkout-field">
-                            <label for="customer-name">Nombre y apellidos *</label>
-                            <input id="customer-name" type="text" autocomplete="name" minlength="3" maxlength="100" pattern=".*\s+.*" title="Escribe tu nombre y al menos un apellido." required>
-                        </div>
-                        <div class="checkout-field">
-                            <label for="customer-phone">Número de teléfono *</label>
-                            <input id="customer-phone" type="tel" autocomplete="tel" inputmode="tel" minlength="6" maxlength="20" required>
-                        </div>
-                        <div class="checkout-field">
-                            <label for="customer-email">Correo electrónico *</label>
-                            <input id="customer-email" type="email" autocomplete="email" maxlength="254" required>
-                        </div>
+                        <legend>Tu cuenta</legend>
+                        <p id="checkout-user-status" class="checkout-note">Comprueba tu sesión…</p>
+                        <a id="checkout-login-link" class="back-link" href="perfil.html">Iniciar sesión o crear una cuenta</a>
                     </fieldset>
 
                     <fieldset class="checkout-fieldset">
                         <legend>Datos de pago (solo demostración)</legend>
-                        <p class="checkout-note">Es una demostración: no introduzcas una tarjeta real. No se realizará ningún cobro.</p>
+                        <p class="checkout-note">Usa datos ficticios. Solo se enviarán el titular, número y caducidad al servicio Usuarios, que conserva los últimos cuatro dígitos. El CVV solo se valida en esta página; no se envía ni se cobra nada.</p>
                         <div class="checkout-field">
                             <label for="cardholder-name">Titular de la tarjeta *</label>
                             <input id="cardholder-name" type="text" autocomplete="off" maxlength="100" required>
@@ -97,7 +85,7 @@
                         </div>
                     </fieldset>
 
-                    <button class="btn btn-primary checkout-submit" type="submit">Validar datos (demo)</button>
+                    <button class="btn btn-primary checkout-submit" id="checkout-submit" type="submit" disabled>Comprar entrada (demo)</button>
                     <p id="checkout-message" class="checkout-message" role="status" aria-live="polite"></p>
                 </form>
 
@@ -122,7 +110,7 @@
                             <dd id="summary-total">25 €</dd>
                         </div>
                     </dl>
-                    <p>No guardamos ni enviamos los datos de este formulario.</p>
+                    <p>La reserva y el stock se actualizarán en Entradas. No se realizará ningún cobro.</p>
                     <a class="back-link" href="entradas.html">← Volver a la pantalla de entradas</a>
                 </aside>
             </div>

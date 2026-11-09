@@ -102,13 +102,19 @@ tipos_entrada: list[TipoEntrada] = [
         precio=90, stockTotal=5000, stockDisponible=5000,
         fechaInicioValidez=date(2027, 7, 15),
         fechaFinValidez=date(2027, 7, 18), estado="disponible"
+    ),
+    TipoEntrada(
+        id=3, nombre="abono_un_dia", descripcion="Acceso al festival durante un día",
+        precio=25, stockTotal=3000, stockDisponible=3000,
+        fechaInicioValidez=date(2027, 7, 16),
+        fechaFinValidez=date(2027, 7, 16), estado="disponible"
     )
 ]
 compras: list[CompraEntrada] = []
 entradas_usuarios: list[EntradaUsuario] = []
 # Mapeo interno para relacionar las entradas individuales con su compra.
 entrada_a_compra: dict[int, int] = {}
-contador_tipos = 3
+contador_tipos = 4
 contador_compras = 1
 contador_entradas = 1
 bloqueo = Lock()  # Protege los datos en memoria dentro de un solo proceso.
