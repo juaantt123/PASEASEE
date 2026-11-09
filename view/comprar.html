@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#09090d">
+    <title>Comprar entradas | Subsonic Festival 2026</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <a class="logo" href="index.html" aria-label="Subsonic Fest, inicio">SUBSONIC<span>FEST</span></a>
+        <nav aria-label="Navegación principal">
+            <ul class="nav-links">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="entradas.html" class="active" aria-current="page">Entradas</a></li>
+                <li><a href="escaleta.html">Escaleta</a></li>
+                <li><a href="tienda.html">Tienda</a></li>
+            </ul>
+        </nav>
+        <button class="menu-toggle" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false">
+            ☰
+        </button>
+    </header>
+
+    <main class="tickets-page">
+        <section class="tickets-hero">
+            <a class="back-link" href="entradas.html">← Volver a la pantalla de entradas</a>
+            <span class="badge">EDICIÓN 2026 · RESERVA DEMOSTRATIVA</span>
+            <h1>Prepara tu <span class="gradient-text">COMPRA</span></h1>
+            <p>Indica tus datos y el tipo de entrada. Este formulario es una demostración y no realiza cobros.</p>
+        </section>
+
+        <section class="checkout-section" aria-labelledby="checkout-title">
+            <div class="checkout-heading">
+                <span class="eyebrow">DATOS DE LA RESERVA</span>
+                <h2 id="checkout-title">Información del comprador</h2>
+                <p>Los campos marcados con * son obligatorios.</p>
+            </div>
+
+            <div class="checkout-layout">
+                <form id="checkout-form" class="checkout-form" novalidate>
+                    <fieldset class="checkout-fieldset">
+                        <legend>Tu entrada</legend>
+                        <div class="checkout-field">
+                            <label for="ticket-type">Tipo de entrada *</label>
+                            <select id="ticket-type" required>
+                                <option value="dia">Entrada de día</option>
+                                <option value="abono">Abono general (3 días)</option>
+                                <option value="vip">Abono VIP</option>
+                            </select>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="ticket-quantity">Número de entradas *</label>
+                            <input id="ticket-quantity" type="number" min="1" max="6" value="1" required>
+                            <small>Puedes seleccionar de 1 a 6 entradas.</small>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="checkout-fieldset">
+                        <legend>Datos de contacto</legend>
+                        <div class="checkout-field">
+                            <label for="customer-name">Nombre y apellidos *</label>
+                            <input id="customer-name" type="text" autocomplete="name" minlength="3" maxlength="100" pattern=".*\s+.*" title="Escribe tu nombre y al menos un apellido." required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="customer-phone">Número de teléfono *</label>
+                            <input id="customer-phone" type="tel" autocomplete="tel" inputmode="tel" minlength="6" maxlength="20" required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="customer-email">Correo electrónico *</label>
+                            <input id="customer-email" type="email" autocomplete="email" maxlength="254" required>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="checkout-fieldset">
+                        <legend>Datos de pago (solo demostración)</legend>
+                        <p class="checkout-note">Es una demostración: no introduzcas una tarjeta real. No se realizará ningún cobro.</p>
+                        <div class="checkout-field">
+                            <label for="cardholder-name">Titular de la tarjeta *</label>
+                            <input id="cardholder-name" type="text" autocomplete="off" maxlength="100" required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="card-number">Número de tarjeta de prueba *</label>
+                            <input id="card-number" type="text" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="Solo números" required>
+                        </div>
+                        <div class="checkout-card-row">
+                            <div class="checkout-field">
+                                <label for="card-expiry">Caducidad (MM/AA) *</label>
+                                <input id="card-expiry" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="MM/AA" required>
+                            </div>
+                            <div class="checkout-field">
+                                <label for="card-cvc">CVV de prueba *</label>
+                                <input id="card-cvc" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="3 o 4 dígitos" required>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <button class="btn btn-primary checkout-submit" type="submit">Validar datos (demo)</button>
+                    <p id="checkout-message" class="checkout-message" role="status" aria-live="polite"></p>
+                </form>
+
+                <aside class="checkout-summary" aria-labelledby="summary-title">
+                    <span class="eyebrow">RESUMEN</span>
+                    <h2 id="summary-title">Tu selección</h2>
+                    <dl>
+                        <div>
+                            <dt>Entrada</dt>
+                            <dd id="summary-ticket">Entrada de día</dd>
+                        </div>
+                        <div>
+                            <dt>Cantidad</dt>
+                            <dd id="summary-quantity">1</dd>
+                        </div>
+                        <div>
+                            <dt>Precio por entrada</dt>
+                            <dd id="summary-price">25 €</dd>
+                        </div>
+                        <div class="checkout-total">
+                            <dt>Total</dt>
+                            <dd id="summary-total">25 €</dd>
+                        </div>
+                    </dl>
+                    <p>No guardamos ni enviamos los datos de este formulario.</p>
+                    <a class="back-link" href="entradas.html">← Volver a la pantalla de entradas</a>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Subsonic Festival. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="app.js"></script>
+    <script src="comprar.js"></script>
+</body>
+</html>

@@ -452,8 +452,32 @@ body {
 }
 
 .ticket-button {
+    display: flex;
     width: 100%;
+    align-items: center;
+    justify-content: center;
     margin-top: auto;
+    color: var(--text-light);
+    text-align: center;
+    text-decoration: none;
+}
+
+.ticket-button.btn-primary {
+    color: #10120a;
+}
+
+.ticket-button-alt {
+    border-color: var(--accent-pink);
+    background: var(--accent-pink);
+    color: #210914;
+    box-shadow: 0 8px 24px rgba(255, 77, 157, 0.18);
+}
+
+.ticket-button-alt:hover {
+    border-color: #ff78b4;
+    background: #ff78b4;
+    color: #210914;
+    box-shadow: 0 12px 30px rgba(255, 77, 157, 0.28);
 }
 
 .ticket-button:disabled {
@@ -478,10 +502,160 @@ body {
     text-align: center;
 }
 
+.checkout-section {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 1rem 7% 5rem;
+}
+
+.checkout-heading {
+    margin-bottom: 1.5rem;
+}
+
+.checkout-heading h2,
+.checkout-summary h2 {
+    margin-top: 0.3rem;
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    letter-spacing: -0.04em;
+}
+
+.checkout-heading > p,
+.checkout-summary > p {
+    margin-top: 0.4rem;
+    color: var(--text-gray);
+    font-size: 0.88rem;
+}
+
+.checkout-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(240px, 0.8fr);
+    align-items: start;
+    gap: 1.2rem;
+}
+
+.checkout-form,
+.checkout-summary {
+    padding: clamp(1rem, 3vw, 1.6rem);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 14px;
+    background: var(--bg-card);
+}
+
+.checkout-fieldset {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 0;
+    border: 0;
+}
+
+.checkout-fieldset legend {
+    width: 100%;
+    margin-bottom: 1rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 1.08rem;
+    font-weight: 800;
+}
+
+.checkout-field {
+    display: grid;
+    min-width: 0;
+    gap: 0.4rem;
+}
+
+.checkout-field label {
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.checkout-field input,
+.checkout-field select {
+    width: 100%;
+    min-height: 46px;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background: #0c0c12;
+    color: var(--text-light);
+    font-size: 0.95rem;
+}
+
+.checkout-field input::placeholder {
+    color: #858590;
+}
+
+.checkout-field small {
+    color: var(--text-gray);
+    font-size: 0.76rem;
+}
+
+.checkout-note {
+    color: var(--text-gray);
+    font-size: 0.82rem;
+}
+
+.checkout-card-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.checkout-submit {
+    width: 100%;
+}
+
+.checkout-message {
+    min-height: 1.5rem;
+    margin-top: 0.8rem;
+    color: #ff9fbd;
+    font-size: 0.85rem;
+}
+
+.checkout-message.is-success {
+    color: var(--accent-cyan);
+}
+
+.checkout-summary {
+    position: sticky;
+    top: 100px;
+}
+
+.checkout-summary dl {
+    margin: 1.4rem 0 1rem;
+}
+
+.checkout-summary dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.87rem;
+}
+
+.checkout-summary dt {
+    color: var(--text-gray);
+}
+
+.checkout-summary dd {
+    font-weight: 700;
+    text-align: right;
+}
+
+.checkout-summary .checkout-total dd {
+    color: var(--accent-cyan);
+}
+
+.checkout-summary .back-link {
+    display: inline-block;
+    margin: 1.2rem 0 0;
+}
+
 .stage-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.1rem;
+    gap: 1.6rem;
 }
 
 .stage-card,
@@ -493,9 +667,31 @@ body {
     background: var(--bg-card);
 }
 
+.stage-card {
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.035), transparent 45%),
+        var(--bg-card-raised);
+    box-shadow:
+        0 5px 0 rgba(154, 117, 255, 0.22),
+        0 10px 0 rgba(199, 255, 61, 0.1),
+        0 14px 24px rgba(0, 0, 0, 0.25);
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+
+.stage-card:hover {
+    z-index: 1;
+    transform: scale(1.04);
+    border-color: rgba(199, 255, 61, 0.32);
+    box-shadow:
+        0 5px 0 rgba(154, 117, 255, 0.3),
+        0 10px 0 rgba(199, 255, 61, 0.15),
+        0 16px 32px rgba(0, 0, 0, 0.4);
+}
+
 .stage-visual {
     position: relative;
     display: grid;
+    aspect-ratio: 16 / 9;
     min-height: 155px;
     overflow: hidden;
     place-items: center;
@@ -505,28 +701,12 @@ body {
         #15151e;
 }
 
-.stage-visual::before,
-.stage-visual::after {
+.stage-visual img {
     position: absolute;
-    width: 210px;
-    height: 210px;
-    border: 1px solid rgba(199, 255, 61, 0.24);
-    border-radius: 50%;
-    content: "";
-}
-
-.stage-visual::after {
-    width: 145px;
-    height: 145px;
-    border-color: rgba(255, 77, 157, 0.32);
-}
-
-.stage-visual span {
-    z-index: 1;
-    color: rgba(255, 255, 255, 0.88);
-    font-size: 2.5rem;
-    font-weight: 900;
-    letter-spacing: -0.08em;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .stage-visual-underground {
@@ -536,31 +716,11 @@ body {
         #15131d;
 }
 
-.stage-visual-underground::before {
-    border-color: rgba(154, 117, 255, 0.34);
-    transform: scaleX(0.7);
-}
-
-.stage-visual-underground::after {
-    border-color: rgba(255, 77, 157, 0.28);
-    transform: scaleY(0.65);
-}
-
 .stage-visual-chill {
     background:
         repeating-linear-gradient(135deg, transparent 0 24px, rgba(255, 255, 255, 0.04) 25px 26px),
         radial-gradient(ellipse at 50% 80%, rgba(62, 187, 174, 0.3), transparent 60%),
         #11191a;
-}
-
-.stage-visual-chill::before {
-    border-color: rgba(112, 232, 206, 0.3);
-    transform: scaleY(0.62);
-}
-
-.stage-visual-chill::after {
-    border-color: rgba(199, 255, 61, 0.2);
-    transform: scaleX(0.68);
 }
 
 .stage-content {
@@ -651,6 +811,8 @@ body {
 }
 
 .shop-card {
+    display: flex;
+    flex-direction: column;
     transition: transform var(--transition), border-color var(--transition);
 }
 
@@ -746,7 +908,58 @@ body {
     font-size: 0.8rem;
 }
 
+.shop-art-tote {
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(255, 77, 157, 0.24), transparent 55%),
+        #191922;
+}
+
+.shop-art-cap {
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(199, 255, 61, 0.22), transparent 55%),
+        #191922;
+}
+
+.shop-art-bottle {
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(62, 187, 174, 0.25), transparent 55%),
+        #191922;
+}
+
+.shop-art-glasses {
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(154, 117, 255, 0.28), transparent 55%),
+        #191922;
+}
+
+.shop-art-wristband {
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(255, 77, 157, 0.2), transparent 55%),
+        #191922;
+}
+
+.shop-art-bag {
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(199, 255, 61, 0.18), transparent 55%),
+        #191922;
+}
+
+.shop-art-earplugs {
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(154, 117, 255, 0.24), transparent 55%),
+        #191922;
+}
+
+.shop-art-fan {
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(62, 187, 174, 0.22), transparent 55%),
+        #191922;
+}
+
 .shop-card-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
     padding: 1.15rem;
 }
 
@@ -757,14 +970,15 @@ body {
 }
 
 .shop-card-content > p {
+    flex: 1;
     min-height: 3.1rem;
     font-size: 0.79rem;
 }
 
 .shop-card-footer {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr;
     align-items: center;
-    justify-content: space-between;
     gap: 0.5rem;
     margin-top: 1rem;
     padding-top: 0.8rem;
@@ -777,10 +991,20 @@ body {
     font-weight: 750;
 }
 
-.shop-unavailable {
-    color: #858590;
-    font-size: 0.64rem;
-    text-align: right;
+.shop-buy-button {
+    display: flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.8rem;
+    background: var(--accent-cyan);
+    color: #10120a;
+    font-size: 0.82rem;
+    text-decoration: none;
+}
+
+.shop-buy-button:hover {
+    background: #d8ff78;
 }
 
 .cashless-notice {
@@ -867,8 +1091,33 @@ body {
 .card h3,
 .card p,
 .card-link {
-    position: relative;
-    z-index: 1;
+    margin-top: auto;
+    color: var(--accent-cyan);
+    font-size: 0.88rem;
+    font-weight: 800;
+    position: relative; /* Añadido */
+    padding-bottom: 3px; /* Añadido */
+    transition: transform var(--transition);
+}
+
+/* Creamos la línea invisible debajo */
+.card-link::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--accent-cyan);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.4s ease;
+}
+
+/* Al pasar el ratón por la tarjeta, la línea se despliega */
+.card:hover .card-link::after {
+    transform: scaleX(1);
+    transform-origin: left;
 }
 
 .card-icon {
@@ -1014,6 +1263,14 @@ footer {
         grid-template-columns: 1fr;
     }
 
+    .checkout-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-summary {
+        position: static;
+    }
+
     .stage-grid {
         grid-template-columns: 1fr;
     }
@@ -1084,3 +1341,40 @@ footer {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Transición suave para el icono */
+.card-icon {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                box-shadow 0.4s ease, 
+                color 0.3s ease;
+}
+
+/* Efecto al hacer hover en la tarjeta */
+.card:hover .card-icon {
+    transform: translateY(-8px) scale(1.1);
+    color: var(--text-light);
+    box-shadow: 0 12px 25px var(--card-glow);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Aplicamos la animación a las tarjetas por defecto */
+.card {
+    opacity: 0;
+    animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Retrasamos la entrada de cada tarjeta para el efecto cascada */
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.25s; }
+.card:nth-child(3) { animation-delay: 0.4s; }

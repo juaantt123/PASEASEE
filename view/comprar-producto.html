@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#09090d">
+    <title>Comprar producto | Subsonic Festival 2026</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <a class="logo" href="index.html" aria-label="Subsonic Fest, inicio">SUBSONIC<span>FEST</span></a>
+        <nav aria-label="Navegación principal">
+            <ul class="nav-links">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="entradas.html">Entradas</a></li>
+                <li><a href="escaleta.html">Escaleta</a></li>
+                <li><a href="tienda.html" class="active" aria-current="page">Tienda</a></li>
+            </ul>
+        </nav>
+        <button class="menu-toggle" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false">
+            ☰
+        </button>
+    </header>
+
+    <main class="tickets-page">
+        <section class="tickets-hero">
+            <a class="back-link" href="tienda.html">← Volver a la tienda</a>
+            <span class="badge">MERCH OFICIAL · 2026</span>
+            <h1>Tu pedido <span class="gradient-text">SUBSONIC</span></h1>
+            <p>Revisa el producto y completa tus datos para preparar el pedido. Esta página es una demostración y no procesa pagos.</p>
+        </section>
+
+        <section class="checkout-section" aria-labelledby="product-checkout-title">
+            <div class="checkout-heading">
+                <span class="eyebrow">COMPRA DE MERCHANDISING</span>
+                <h2 id="product-checkout-title">Información del pedido</h2>
+                <p>Los campos marcados con * son obligatorios.</p>
+            </div>
+
+            <div class="checkout-layout">
+                <form id="product-checkout-form" class="checkout-form">
+                    <div class="checkout-field">
+                        <label for="product-name">Producto</label>
+                        <input id="product-name" type="text" readonly>
+                    </div>
+                    <div class="checkout-field">
+                        <label for="product-quantity">Cantidad *</label>
+                        <input id="product-quantity" type="number" min="1" max="10" value="1" required>
+                        <small>Puedes pedir de 1 a 10 unidades.</small>
+                    </div>
+                    <fieldset class="checkout-fieldset">
+                        <legend>Datos de contacto y envío</legend>
+                        <div class="checkout-field">
+                            <label for="customer-name">Nombre y apellidos *</label>
+                            <input id="customer-name" type="text" autocomplete="name" minlength="3" maxlength="100" pattern=".*\s+.*" title="Escribe tu nombre y al menos un apellido." required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="customer-email">Correo electrónico *</label>
+                            <input id="customer-email" type="email" autocomplete="email" maxlength="254" required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="shipping-address">Dirección de envío *</label>
+                            <input id="shipping-address" type="text" autocomplete="street-address" maxlength="200" required>
+                        </div>
+                    </fieldset>
+                    <fieldset class="checkout-fieldset">
+                        <legend>Datos bancarios (solo demostración)</legend>
+                        <p class="checkout-note">No introduzcas una tarjeta real. La página no está conectada a una pasarela: no se realizará ningún cobro y los datos no se enviarán ni guardarán.</p>
+                        <div class="checkout-field">
+                            <label for="cardholder-name">Titular de la tarjeta *</label>
+                            <input id="cardholder-name" type="text" autocomplete="off" maxlength="100" required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="card-number">Número de tarjeta de prueba *</label>
+                            <input id="card-number" type="text" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="Solo números" required>
+                        </div>
+                        <div class="checkout-card-row">
+                            <div class="checkout-field">
+                                <label for="card-expiry">Caducidad (MM/AA) *</label>
+                                <input id="card-expiry" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="MM/AA" required>
+                            </div>
+                            <div class="checkout-field">
+                                <label for="card-cvc">CVV de prueba *</label>
+                                <input id="card-cvc" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="3 o 4 dígitos" required>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <button class="btn btn-primary checkout-submit" type="submit">Preparar pedido (demo)</button>
+                    <p id="product-checkout-message" class="checkout-message" role="status" aria-live="polite"></p>
+                </form>
+
+                <aside class="checkout-summary" aria-labelledby="product-summary-title">
+                    <span class="eyebrow">RESUMEN</span>
+                    <h2 id="product-summary-title">Tu selección</h2>
+                    <dl>
+                        <div>
+                            <dt>Producto</dt>
+                            <dd id="summary-product">Cargando...</dd>
+                        </div>
+                        <div>
+                            <dt>Precio por unidad</dt>
+                            <dd id="summary-unit-price">—</dd>
+                        </div>
+                        <div>
+                            <dt>Cantidad</dt>
+                            <dd id="summary-product-quantity">1</dd>
+                        </div>
+                        <div class="checkout-total">
+                            <dt>Total</dt>
+                            <dd id="summary-product-total">—</dd>
+                        </div>
+                    </dl>
+                    <a class="back-link" href="tienda.html">← Volver a la tienda</a>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Subsonic Festival. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="app.js"></script>
+    <script src="comprar-producto.js"></script>
+</body>
+</html>
