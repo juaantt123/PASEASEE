@@ -1,12 +1,13 @@
 const RUTAS = {
     entradas: 'entradas.html',
     escaleta: 'escaleta.html',
-    tienda: 'tienda.html'
+    tienda: 'tienda.html',
+    perfil: 'perfil.html'
 };
 
 /**
  * Función encargada de redirigir a la sección seleccionada
- * @param {string} seccion - 'entradas', 'escaleta' o 'tienda'
+ * @param {string} seccion - Sección del sitio
  */
 function navegarA(seccion) {
     const destino = RUTAS[seccion];

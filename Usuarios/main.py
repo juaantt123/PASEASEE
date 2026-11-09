@@ -5,8 +5,9 @@ import hashlib
 import hmac
 import secrets
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -19,6 +20,14 @@ app = FastAPI(
     title="API Usuarios - Subsonic Festival",
     description="Microservicio de gestion de usuarios",
     version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["null"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_methods=["GET", "POST", "PATCH"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -607,8 +616,22 @@ def eliminar_metodo_pago(
 )
 def actualizar_perfil(
     idUsuario: int,
-    datos: ActualizacionPerfil
+    datos: ActualizacionPerfil,
+    authorization: str | None = Header(default=None)
 ):
+
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Sesion no valida"
+        )
+
+    token = authorization.removeprefix("Bearer ")
+    if sesiones.get(token) != idUsuario:
+        raise HTTPException(
+            status_code=401,
+            detail="Sesion no valida"
+        )
 
     usuario = buscar_usuario(idUsuario)
 

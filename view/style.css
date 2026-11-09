@@ -652,6 +652,142 @@ body {
     margin: 1.2rem 0 0;
 }
 
+[hidden] {
+    display: none !important;
+}
+
+.account-section {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 1rem 7% 5rem;
+}
+
+.account-heading {
+    margin-bottom: 1.4rem;
+}
+
+.account-heading h2 {
+    margin-top: 0.3rem;
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    letter-spacing: -0.04em;
+}
+
+.account-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+}
+
+.account-tab {
+    min-height: 46px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-gray);
+    font-size: 0.9rem;
+    font-weight: 750;
+    cursor: pointer;
+    transition: color var(--transition), background-color var(--transition), border-color var(--transition);
+}
+
+.account-tab.active {
+    border-color: var(--accent-cyan);
+    background: rgba(199, 255, 61, 0.1);
+    color: var(--accent-cyan);
+}
+
+.account-panel,
+.profile-panel {
+    padding: clamp(1rem, 3vw, 1.6rem);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 14px;
+    background: var(--bg-card);
+}
+
+.account-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.account-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+}
+
+.account-submit {
+    width: 100%;
+    margin-top: 0.3rem;
+}
+
+.account-message {
+    min-height: 1.5rem;
+    margin-top: 0.9rem;
+    color: #ff9fbd;
+    font-size: 0.88rem;
+}
+
+.account-message.is-success {
+    color: var(--accent-cyan);
+}
+
+.account-note {
+    margin-top: 0.5rem;
+    color: #858590;
+    font-size: 0.76rem;
+}
+
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.profile-avatar {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid rgba(199, 255, 61, 0.28);
+    border-radius: 50%;
+    background: rgba(199, 255, 61, 0.1);
+    color: var(--accent-cyan);
+    font-size: 1.5rem;
+}
+
+.profile-card-heading {
+    min-width: 0;
+    flex: 1;
+}
+
+.profile-card-heading h3 {
+    margin-top: 0.15rem;
+    overflow-wrap: anywhere;
+    font-size: 1.1rem;
+}
+
+.profile-card-heading p {
+    color: var(--text-gray);
+    font-size: 0.84rem;
+    overflow-wrap: anywhere;
+}
+
+.profile-logout {
+    padding: 0.65rem 0.9rem;
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.profile-edit-form > h3 {
+    margin-bottom: 0.2rem;
+    font-size: 1.1rem;
+}
+
 .stage-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1257,6 +1393,24 @@ footer {
     .tickets-section {
         padding-right: 5%;
         padding-left: 5%;
+    }
+
+    .account-section {
+        padding-right: 5%;
+        padding-left: 5%;
+    }
+
+    .account-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-card {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .profile-logout {
+        margin-left: auto;
     }
 
     .ticket-grid {

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#09090d">
+    <title>Mi perfil | Subsonic Festival 2026</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <a class="logo" href="index.html" aria-label="Subsonic Fest, inicio">SUBSONIC<span>FEST</span></a>
+        <nav aria-label="Navegación principal">
+            <ul class="nav-links">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="entradas.html">Entradas</a></li>
+                <li><a href="escaleta.html">Escaleta</a></li>
+                <li><a href="tienda.html">Tienda</a></li>
+                <li><a href="#perfil" class="active" aria-current="page">Perfil</a></li>
+            </ul>
+        </nav>
+        <button class="menu-toggle" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false">
+            ☰
+        </button>
+    </header>
+
+    <main id="perfil" class="tickets-page">
+        <section class="tickets-hero">
+            <a class="back-link" href="index.html">&larr; Volver al inicio</a>
+            <span class="badge">TU CUENTA · SUBSONIC 2026</span>
+            <h1>Tu perfil <span class="gradient-text">SUBSONIC</span></h1>
+            <p>Regístrate o inicia sesión para gestionar tus datos y estar al día con el festival.</p>
+        </section>
+
+        <section class="account-section" aria-labelledby="account-title">
+            <div class="account-heading">
+                <span class="eyebrow">ÁREA PERSONAL</span>
+                <h2 id="account-title">Accede a tu cuenta</h2>
+            </div>
+
+            <div id="account-auth">
+                <div class="account-tabs" role="tablist" aria-label="Acceso a la cuenta">
+                    <button class="account-tab active" id="login-tab" type="button" role="tab" aria-selected="true" aria-controls="login-panel">Iniciar sesión</button>
+                    <button class="account-tab" id="register-tab" type="button" role="tab" aria-selected="false" aria-controls="register-panel">Crear cuenta</button>
+                </div>
+
+                <div class="account-panel" id="login-panel" role="tabpanel" aria-labelledby="login-tab">
+                    <form id="login-form" class="account-form">
+                        <div class="checkout-field">
+                            <label for="login-email">Correo electrónico *</label>
+                            <input id="login-email" type="email" autocomplete="email" maxlength="254" required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="login-password">Contraseña *</label>
+                            <input id="login-password" type="password" autocomplete="current-password" required>
+                        </div>
+                        <button class="btn btn-primary account-submit" type="submit">Iniciar sesión</button>
+                    </form>
+                </div>
+
+                <div class="account-panel" id="register-panel" role="tabpanel" aria-labelledby="register-tab" hidden>
+                    <form id="register-form" class="account-form">
+                        <div class="account-form-row">
+                            <div class="checkout-field">
+                                <label for="register-name">Nombre *</label>
+                                <input id="register-name" type="text" autocomplete="given-name" maxlength="80" required>
+                            </div>
+                            <div class="checkout-field">
+                                <label for="register-surname">Apellidos *</label>
+                                <input id="register-surname" type="text" autocomplete="family-name" maxlength="120" required>
+                            </div>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="register-email">Correo electrónico *</label>
+                            <input id="register-email" type="email" autocomplete="email" maxlength="254" required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="register-phone">Teléfono</label>
+                            <input id="register-phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20">
+                        </div>
+                        <div class="checkout-field">
+                            <label for="register-birthdate">Fecha de nacimiento</label>
+                            <input id="register-birthdate" type="date" autocomplete="bday">
+                        </div>
+                        <div class="account-form-row">
+                            <div class="checkout-field">
+                                <label for="register-password">Contraseña (mínimo 8 caracteres) *</label>
+                                <input id="register-password" type="password" autocomplete="new-password" minlength="8" required>
+                            </div>
+                            <div class="checkout-field">
+                                <label for="register-confirm-password">Repite la contraseña *</label>
+                                <input id="register-confirm-password" type="password" autocomplete="new-password" minlength="8" required>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary account-submit" type="submit">Crear cuenta</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="profile-panel" class="profile-panel" hidden>
+                <div class="profile-card">
+                    <div class="profile-avatar" aria-hidden="true">♫</div>
+                    <div class="profile-card-heading">
+                        <span class="eyebrow">MI CUENTA</span>
+                        <h3 id="profile-display-name"></h3>
+                        <p id="profile-display-email"></p>
+                    </div>
+                    <button class="btn btn-secondary profile-logout" id="logout-button" type="button">Cerrar sesión</button>
+                </div>
+
+                <form id="profile-form" class="account-form profile-edit-form">
+                    <h3>Mis datos</h3>
+                    <div class="account-form-row">
+                        <div class="checkout-field">
+                            <label for="profile-name">Nombre *</label>
+                            <input id="profile-name" type="text" autocomplete="given-name" maxlength="80" required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="profile-surname">Apellidos *</label>
+                            <input id="profile-surname" type="text" autocomplete="family-name" maxlength="120" required>
+                        </div>
+                    </div>
+                    <div class="checkout-field">
+                        <label for="profile-phone">Teléfono</label>
+                        <input id="profile-phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20">
+                    </div>
+                    <div class="checkout-field">
+                        <label for="profile-birthdate">Fecha de nacimiento</label>
+                        <input id="profile-birthdate" type="date" autocomplete="bday">
+                    </div>
+                    <button class="btn btn-primary account-submit" type="submit">Guardar cambios</button>
+                </form>
+            </div>
+
+            <p id="account-message" class="account-message" role="status" aria-live="polite"></p>
+            <p class="account-note">La cuenta requiere que el servicio de usuarios esté iniciado. Las contraseñas se envían únicamente a la API para su validación y nunca se guardan en el navegador.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Subsonic Festival. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="app.js"></script>
+    <script src="perfil.js"></script>
+</body>
+</html>
