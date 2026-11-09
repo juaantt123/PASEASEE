@@ -111,6 +111,11 @@ class ActualizacionTipo(BaseModel):
     tipo: TipoUsuario
 
 
+class MovimientoSaldo(BaseModel):
+    importe: float = Field(gt=0, le=1000)
+    concepto: str = Field(min_length=1, max_length=120)
+
+
 # ==========================================
 # MODELOS DEL LOGIN
 # ==========================================
@@ -163,6 +168,8 @@ metodos_pago = {
 # El usuario inicial Laura no tiene contraseña
 passwords = {}
 
+# Saldo de prueba en memoria; no representa dinero real.
+saldos_demo: dict[int, float] = {}
 
 # Sesiones provisionales en memoria
 sesiones = {}
@@ -225,6 +232,18 @@ def buscar_usuario_email(email: str):
             return usuario
 
     return None
+
+
+def usuario_de_sesion(authorization: str | None, id_usuario: int | None = None):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Sesion no valida")
+
+    token = authorization.removeprefix("Bearer ")
+    usuario_id = sesiones.get(token)
+    if usuario_id is None or (id_usuario is not None and usuario_id != id_usuario):
+        raise HTTPException(status_code=401, detail="Sesion no valida")
+
+    return buscar_usuario(usuario_id)
 
 
 def comprobar_email(email: str, excluir_id=None):
@@ -381,6 +400,46 @@ def iniciar_sesion(datos: Login):
         tipo="Bearer",
         usuario=usuario
     )
+
+
+@app.get("/api/usuarios/sesion", response_model=Usuario)
+def consultar_sesion(authorization: str | None = Header(default=None)):
+    return usuario_de_sesion(authorization)
+
+
+@app.get("/api/usuarios/{idUsuario}/saldo")
+def consultar_saldo(
+    idUsuario: int,
+    authorization: str | None = Header(default=None)
+):
+    usuario_de_sesion(authorization, idUsuario)
+    return {"saldo": round(saldos_demo.get(idUsuario, 0), 2)}
+
+
+@app.post("/api/usuarios/{idUsuario}/saldo/recargar")
+def recargar_saldo(
+    idUsuario: int,
+    datos: MovimientoSaldo,
+    authorization: str | None = Header(default=None)
+):
+    usuario_de_sesion(authorization, idUsuario)
+    saldos_demo[idUsuario] = round(saldos_demo.get(idUsuario, 0) + datos.importe, 2)
+    return {"saldo": saldos_demo[idUsuario]}
+
+
+@app.post("/api/usuarios/{idUsuario}/saldo/gastar")
+def gastar_saldo(
+    idUsuario: int,
+    datos: MovimientoSaldo,
+    authorization: str | None = Header(default=None)
+):
+    usuario_de_sesion(authorization, idUsuario)
+    saldo_actual = saldos_demo.get(idUsuario, 0)
+    if datos.importe > saldo_actual:
+        raise HTTPException(status_code=409, detail="Saldo de prueba insuficiente")
+
+    saldos_demo[idUsuario] = round(saldo_actual - datos.importe, 2)
+    return {"saldo": saldos_demo[idUsuario]}
 
 
 # ==========================================
@@ -620,19 +679,7 @@ def actualizar_perfil(
     authorization: str | None = Header(default=None)
 ):
 
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401,
-            detail="Sesion no valida"
-        )
-
-    token = authorization.removeprefix("Bearer ")
-    if sesiones.get(token) != idUsuario:
-        raise HTTPException(
-            status_code=401,
-            detail="Sesion no valida"
-        )
-
+    usuario_de_sesion(authorization, idUsuario)
     usuario = buscar_usuario(idUsuario)
 
     for campo, valor in datos.model_dump(

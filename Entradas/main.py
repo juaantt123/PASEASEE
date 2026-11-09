@@ -4,12 +4,20 @@ from typing import Literal
 import os
 import httpx
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
 
 app = FastAPI(title="API Entradas - Subsonic Festival", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["null"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_methods=["GET", "POST", "PATCH"],
+    allow_headers=["Content-Type", "Authorization"],
+)
 URL_USUARIOS = os.getenv("URL_USUARIOS", "http://127.0.0.1:8001/api")
 TipoNombre = Literal["vip", "abono_completo", "abono_un_dia"]
 EstadoTipo = Literal["disponible", "agotada"]
@@ -245,7 +253,27 @@ def comprar_entradas(datos: CompraEntradaInput):
         return compra
 
 @app.get("/api/entradas/usuarios/{idUsuario}", response_model=list[EntradaUsuario])
-def entradas_de_usuario(idUsuario: int):
+def entradas_de_usuario(
+    idUsuario: int,
+    authorization: str | None = Header(default=None)
+):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "Sesion no valida")
+
+    try:
+        sesion = httpx.get(
+            f"{URL_USUARIOS}/usuarios/sesion",
+            headers={"Authorization": authorization},
+            timeout=5
+        )
+    except httpx.RequestError:
+        raise HTTPException(503, "Microservicio Usuarios no disponible")
+
+    if sesion.status_code != 200:
+        raise HTTPException(401, "Sesion no valida")
+    if sesion.json().get("id") != idUsuario:
+        raise HTTPException(403, "No puedes consultar las entradas de otro usuario")
+
     consultar_usuarios(idUsuario)
     return [e for e in entradas_usuarios if e.idUsuario == idUsuario]
 

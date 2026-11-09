@@ -98,7 +98,7 @@
             </div>
 
             <div id="profile-panel" class="profile-panel" hidden>
-                <div class="profile-card">
+                <div class="profile-header">
                     <div class="profile-avatar" aria-hidden="true">♫</div>
                     <div class="profile-card-heading">
                         <span class="eyebrow">MI CUENTA</span>
@@ -108,32 +108,75 @@
                     <button class="btn btn-secondary profile-logout" id="logout-button" type="button">Cerrar sesión</button>
                 </div>
 
-                <form id="profile-form" class="account-form profile-edit-form">
-                    <h3>Mis datos</h3>
-                    <div class="account-form-row">
-                        <div class="checkout-field">
-                            <label for="profile-name">Nombre *</label>
-                            <input id="profile-name" type="text" autocomplete="given-name" maxlength="80" required>
+                <section class="account-dashboard" aria-labelledby="dashboard-title">
+                    <div class="dashboard-title">
+                        <span class="eyebrow">TU FESTIVAL</span>
+                        <h3 id="dashboard-title">Mi experiencia</h3>
+                    </div>
+
+                    <section class="dashboard-section profile-edit-section" aria-labelledby="profile-data-title">
+                        <form id="profile-form" class="account-form profile-edit-form">
+                            <h4 id="profile-data-title">Mis datos</h4>
+                            <div class="checkout-field">
+                                <label for="profile-name">Nombre *</label>
+                                <input id="profile-name" type="text" autocomplete="given-name" maxlength="80" required>
+                            </div>
+                            <div class="checkout-field">
+                                <label for="profile-surname">Apellidos *</label>
+                                <input id="profile-surname" type="text" autocomplete="family-name" maxlength="120" required>
+                            </div>
+                            <div class="checkout-field">
+                                <label for="profile-phone">Teléfono</label>
+                                <input id="profile-phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20">
+                            </div>
+                            <div class="checkout-field">
+                                <label for="profile-birthdate">Fecha de nacimiento</label>
+                                <input id="profile-birthdate" type="date" autocomplete="bday">
+                            </div>
+                            <button class="btn btn-primary account-submit" type="submit">Guardar cambios</button>
+                        </form>
+                    </section>
+
+                    <section class="dashboard-section tickets-dashboard-section" aria-labelledby="my-tickets-title">
+                        <h4 id="my-tickets-title">Mis entradas</h4>
+                        <p id="tickets-status" class="dashboard-status">Cargando tus entradas...</p>
+                        <ul id="my-tickets" class="account-ticket-list"></ul>
+                    </section>
+
+                    <section class="dashboard-section schedule-dashboard-section" aria-labelledby="my-schedule-title">
+                        <h4 id="my-schedule-title">Artistas por día</h4>
+                        <p class="dashboard-hint">Horarios orientativos de la programación publicada.</p>
+                        <div id="account-schedule" class="account-schedule"></div>
+                    </section>
+
+                    <section class="dashboard-section wallet-section" aria-labelledby="wallet-title">
+                        <div class="wallet-heading">
+                            <div>
+                                <span class="eyebrow">SALDO DE PRUEBA</span>
+                                <h4 id="wallet-title">Monedero para la tienda</h4>
+                            </div>
+                            <p id="wallet-balance" class="wallet-balance">0,00 €</p>
                         </div>
-                        <div class="checkout-field">
-                            <label for="profile-surname">Apellidos *</label>
-                            <input id="profile-surname" type="text" autocomplete="family-name" maxlength="120" required>
-                        </div>
-                    </div>
-                    <div class="checkout-field">
-                        <label for="profile-phone">Teléfono</label>
-                        <input id="profile-phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20">
-                    </div>
-                    <div class="checkout-field">
-                        <label for="profile-birthdate">Fecha de nacimiento</label>
-                        <input id="profile-birthdate" type="date" autocomplete="bday">
-                    </div>
-                    <button class="btn btn-primary account-submit" type="submit">Guardar cambios</button>
-                </form>
+                        <p class="dashboard-hint">Añade crédito demostrativo y úsalo en los pedidos de merchandising. No es dinero real ni se realiza ningún cobro.</p>
+                        <form id="wallet-form" class="wallet-form">
+                            <div class="checkout-field">
+                                <label for="wallet-amount">Añadir saldo *</label>
+                                <select id="wallet-amount" required>
+                                    <option value="10">10 €</option>
+                                    <option value="20">20 €</option>
+                                    <option value="50">50 €</option>
+                                    <option value="100">100 €</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" type="submit">Añadir crédito demo</button>
+                        </form>
+                        <p id="wallet-status" class="dashboard-status" role="status" aria-live="polite"></p>
+                    </section>
+                </section>
             </div>
 
             <p id="account-message" class="account-message" role="status" aria-live="polite"></p>
-            <p class="account-note">La cuenta requiere que el servicio de usuarios esté iniciado. Las contraseñas se envían únicamente a la API para su validación y nunca se guardan en el navegador.</p>
+            <p class="account-note">La cuenta requiere que los servicios estén iniciados. El saldo y las cuentas de prueba se guardan solo en memoria y se reinician al apagar el servicio. No se usa dinero real.</p>
         </section>
     </main>
 

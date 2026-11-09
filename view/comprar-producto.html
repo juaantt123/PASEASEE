@@ -65,28 +65,7 @@
                             <input id="shipping-address" type="text" autocomplete="street-address" maxlength="200" required>
                         </div>
                     </fieldset>
-                    <fieldset class="checkout-fieldset">
-                        <legend>Datos bancarios (solo demostración)</legend>
-                        <p class="checkout-note">No introduzcas una tarjeta real. La página no está conectada a una pasarela: no se realizará ningún cobro y los datos no se enviarán ni guardarán.</p>
-                        <div class="checkout-field">
-                            <label for="cardholder-name">Titular de la tarjeta *</label>
-                            <input id="cardholder-name" type="text" autocomplete="off" maxlength="100" required>
-                        </div>
-                        <div class="checkout-field">
-                            <label for="card-number">Número de tarjeta de prueba *</label>
-                            <input id="card-number" type="text" inputmode="numeric" autocomplete="off" maxlength="19" placeholder="Solo números" required>
-                        </div>
-                        <div class="checkout-card-row">
-                            <div class="checkout-field">
-                                <label for="card-expiry">Caducidad (MM/AA) *</label>
-                                <input id="card-expiry" type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="MM/AA" required>
-                            </div>
-                            <div class="checkout-field">
-                                <label for="card-cvc">CVV de prueba *</label>
-                                <input id="card-cvc" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="3 o 4 dígitos" required>
-                            </div>
-                        </div>
-                    </fieldset>
+                    <p class="checkout-note">El pedido se descontará del saldo demostrativo de tu cuenta. <a href="perfil.html">Inicia sesión y añade saldo demo</a>. No se realiza ningún cobro con dinero real.</p>
                     <button class="btn btn-primary checkout-submit" type="submit">Preparar pedido (demo)</button>
                     <p id="product-checkout-message" class="checkout-message" role="status" aria-live="polite"></p>
                 </form>
