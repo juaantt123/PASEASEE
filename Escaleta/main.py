@@ -17,7 +17,7 @@ from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, Field, ValidationError, computed_field, model_validator
 
 DB_PATH = Path(os.getenv('ESCALETA_DB', str(Path(__file__).parent / 'data' / 'escaleta.sqlite3')))
-ESPACIOS_URL = os.getenv('ESPACIOS_URL', 'http://127.0.0.1:8001/api').rstrip('/')
+ESPACIOS_URL = os.getenv('ESPACIOS_URL', 'http://127.0.0.1:8003/api').rstrip('/')
 ESPACIOS_TIMEOUT = float(os.getenv('ESPACIOS_TIMEOUT', '3'))
 FESTIVAL_TZ = ZoneInfo(os.getenv('FESTIVAL_TZ', 'Europe/Madrid'))
 Id = Annotated[int, PathParam(ge=1)]
