@@ -9,7 +9,7 @@ const API_ESPACIOS = 'http://127.0.0.1:8003/api';
 const API_TIENDA = 'http://127.0.0.1:8004/api';
 
 // --- CACHÉ DE DATOS LOCALES ---
-let cache = { artistas: [], espacios: [], entradas: [], tienda: [] };
+let cache = { artistas: [], actuaciones: [], espacios: [], entradas: [], tienda: [] };
 
 function cambiarPestana(idSeccion, botonGatillo) {
     document.querySelectorAll('.admin-section').forEach(el => el.classList.remove('active'));
@@ -28,24 +28,65 @@ function cerrarSesionAdmin() {
 // FUNCIONES DE LECTURA (GET) Y RENDERIZADO
 // ==========================================
 
+function escaparTexto(valor) {
+    const span = document.createElement('span');
+    span.textContent = String(valor ?? '');
+    return span.innerHTML;
+}
+
 async function cargarArtistas() {
     const tbody = document.getElementById('tabla-artistas');
     try {
-        const res = await fetch(`${API_ESCALETA}/escaleta/artistas`);
-        if (!res.ok) throw new Error();
-        cache.artistas = await res.json();
-        tbody.innerHTML = cache.artistas.map(a => `
-            <tr>
-                <td><strong>${a.nombre}</strong></td>
-                <td>${a.genero}</td>
-                <td><small style="color:#c2ff00;">${a.dia||'-'} | ${a.horaInicio||''} - ${a.horaFin||''}</small><br><small style="color:#888;">${a.escenario||'-'}</small></td>
-                <td>
-                    <button class="action-btn" onclick="prepararEdicion('artista', ${a.id})">✏️</button>
-                    <button class="action-btn delete" onclick="eliminarRegistro('artista', ${a.id}, '${API_ESCALETA}/escaleta/artistas')">🗑️</button>
-                </td>
-            </tr>
-        `).join('') || `<tr><td colspan="4" style="text-align: center;">No hay artistas.</td></tr>`;
-    } catch (e) { tbody.innerHTML = `<tr><td colspan="4" style="color: #ff4444;">Error de conexión con API Escaleta (8002)</td></tr>`; }
+        const [resArtistas, resActuaciones] = await Promise.all([
+            fetch(`${API_ESCALETA}/escaleta/artistas`), fetch(`${API_ESCALETA}/escaleta`)
+        ]);
+        if (!resArtistas.ok || !resActuaciones.ok) throw new Error('No se pudieron cargar artistas y actuaciones');
+        cache.artistas = await resArtistas.json();
+        cache.actuaciones = await resActuaciones.json();
+        const selector = document.getElementById('art-existente');
+        const previo = selector.value;
+        selector.replaceChildren(new Option('Nuevo artista', ''));
+        for (const artista of cache.artistas) selector.add(new Option(artista.nombre, String(artista.id)));
+        selector.value = previo;
+        tbody.innerHTML = cache.artistas.flatMap(a => {
+            const actuaciones = cache.actuaciones.filter(x => x.idArtista === a.id);
+            return (actuaciones.length ? actuaciones : [null]).map(act => `
+                <tr><td><strong>${escaparTexto(a.nombre)}</strong></td>
+                <td>${escaparTexto(a.genero)}</td>
+                <td>${act ? `${escaparTexto(act.fecha)} · ${escaparTexto(act.horaInicio.slice(0,5))}–${escaparTexto(act.horaFin.slice(0,5))}<br><small>${escaparTexto(act.nombreEspacio)} · ${escaparTexto(act.estado)}</small>` : 'Sin actuación programada'}</td>
+                <td><button class="action-btn" onclick="editarActuacion(${a.id}, ${act ? act.id : 'null'})">✏️ ${act ? 'Editar actuación' : 'Programar'}</button>
+                <button class="action-btn delete" onclick="eliminarRegistro('artista', ${a.id}, '${API_ESCALETA}/escaleta/artistas')">🗑️ Artista</button></td></tr>`);
+        }).join('') || '<tr><td colspan="4">No hay artistas.</td></tr>';
+    } catch (e) { tbody.innerHTML = '<tr><td colspan="4" style="color:#ff4444">Error al cargar artistas y actuaciones de Escaleta (8002)</td></tr>'; }
+}
+
+function actualizarEscenarios() {
+    const selector = document.getElementById('art-escenario');
+    const valor = selector.value;
+    selector.replaceChildren(new Option('Selecciona un escenario', ''));
+    for (const e of cache.espacios.filter(e => e.tipo === 'escenario' && ['activo', 'libre'].includes(e.estado))) {
+        selector.add(new Option(e.nombre, String(e.id)));
+    }
+    selector.value = valor;
+    selector.disabled = selector.options.length === 1;
+}
+
+function editarActuacion(idArtista, idActuacion) {
+    const artista = cache.artistas.find(a => a.id === idArtista);
+    const actuacion = cache.actuaciones.find(a => a.id === idActuacion);
+    if (!artista) return;
+    document.getElementById('art-id').value = artista.id;
+    document.getElementById('art-existente').value = String(artista.id);
+    document.getElementById('art-nombre').value = artista.nombre;
+    document.getElementById('art-genero').value = artista.genero;
+    document.getElementById('act-id').value = actuacion?.id || '';
+    document.getElementById('art-fecha').value = actuacion?.fecha || '';
+    document.getElementById('art-escenario').value = actuacion ? String(actuacion.idEspacio) : '';
+    document.getElementById('art-horaInicio').value = actuacion?.horaInicio?.slice(0,5) || '';
+    document.getElementById('art-horaFin').value = actuacion?.horaFin?.slice(0,5) || '';
+    document.getElementById('btn-art-submit').textContent = actuacion ? 'Actualizar actuación' : 'Programar actuación';
+    document.getElementById('btn-art-cancel').style.display = 'block';
+    document.getElementById('art-mensaje').textContent = '';
 }
 
 async function cargarEspacios() {
@@ -54,6 +95,7 @@ async function cargarEspacios() {
         const res = await fetch(`${API_ESPACIOS}/espacios`);
         if (!res.ok) throw new Error();
         cache.espacios = await res.json();
+        actualizarEscenarios();
         tbody.innerHTML = cache.espacios.map(e => `
             <tr>
                 <td><strong>${e.nombre}</strong></td>
@@ -137,16 +179,7 @@ async function eliminarRegistro(tipo, id, urlBase) {
 
 function prepararEdicion(tipo, id) {
     if (tipo === 'artista') {
-        const item = cache.artistas.find(x => x.id === id);
-        document.getElementById('art-id').value = item.id;
-        document.getElementById('art-nombre').value = item.nombre;
-        document.getElementById('art-genero').value = item.genero;
-        document.getElementById('art-dia').value = item.dia || 'Martes';
-        document.getElementById('art-escenario').value = item.escenario || '';
-        document.getElementById('art-horaInicio').value = item.horaInicio || '';
-        document.getElementById('art-horaFin').value = item.horaFin || '';
-        document.getElementById('btn-art-submit').innerText = 'Actualizar Artista';
-        document.getElementById('btn-art-cancel').style.display = 'block';
+        editarActuacion(id, null);
     } else if (tipo === 'espacio') {
         const item = cache.espacios.find(x => x.id === id);
         document.getElementById('esp-id').value = item.id;
@@ -182,6 +215,8 @@ function cancelarEdicion(tipo) {
     if (tipo === 'artista') {
         document.getElementById('form-artista').reset();
         document.getElementById('art-id').value = '';
+        document.getElementById('act-id').value = '';
+        document.getElementById('art-mensaje').textContent = '';
         document.getElementById('btn-art-submit').innerText = 'Guardar Artista';
         document.getElementById('btn-art-cancel').style.display = 'none';
     } else if (tipo === 'espacio') {
@@ -221,15 +256,59 @@ async function enviarFormulario(urlBase, id, datos, recargarFunc, cancelarFunc) 
     } catch (error) { alert(`Error conectando con la API en: ${url}`); }
 }
 
-document.getElementById('form-artista').addEventListener('submit', (e) => {
+document.getElementById('art-existente').addEventListener('change', event => {
+    const id = Number(event.target.value);
+    if (id) editarActuacion(id, null);
+    else cancelarEdicion('artista');
+});
+
+async function peticionEscaleta(url, method, datos) {
+    const res = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos) });
+    if (!res.ok) {
+        let detalle = `Error ${res.status}`;
+        try { const error = await res.json(); detalle = error.mensaje || error.detail || detalle; } catch {}
+        throw new Error(typeof detalle === 'string' ? detalle : 'Datos no válidos');
+    }
+    return res.json();
+}
+
+document.getElementById('form-artista').addEventListener('submit', async e => {
     e.preventDefault();
-    const id = document.getElementById('art-id').value;
-    const datos = {
-        nombre: document.getElementById('art-nombre').value, genero: document.getElementById('art-genero').value,
-        dia: document.getElementById('art-dia').value, escenario: document.getElementById('art-escenario').value,
-        horaInicio: document.getElementById('art-horaInicio').value, horaFin: document.getElementById('art-horaFin').value
+    const form = e.currentTarget;
+    const boton = document.getElementById('btn-art-submit');
+    const mensaje = document.getElementById('art-mensaje');
+    let artistaId = document.getElementById('art-id').value;
+    const actuacionId = document.getElementById('act-id').value;
+    const anterior = cache.actuaciones.find(a => String(a.id) === actuacionId);
+    const datosArtista = { nombre: document.getElementById('art-nombre').value.trim(), genero: document.getElementById('art-genero').value.trim() };
+    const datosActuacion = {
+        idEspacio: Number(document.getElementById('art-escenario').value),
+        fecha: document.getElementById('art-fecha').value,
+        horaInicio: document.getElementById('art-horaInicio').value,
+        horaFin: document.getElementById('art-horaFin').value,
+        estado: anterior?.estado || 'programada'
     };
-    enviarFormulario(`${API_ESCALETA}/escaleta/artistas`, id, datos, cargarArtistas, () => cancelarEdicion('artista'));
+    if (!form.reportValidity()) return;
+    if (datosActuacion.horaFin <= datosActuacion.horaInicio) {
+        mensaje.textContent = 'La hora de fin debe ser posterior a la hora de inicio.';
+        return;
+    }
+    boton.disabled = true;
+    mensaje.textContent = 'Guardando…';
+    try {
+        const artista = await peticionEscaleta(`${API_ESCALETA}/escaleta/artistas${artistaId ? '/' + artistaId : ''}`, artistaId ? 'PUT' : 'POST', datosArtista);
+        artistaId = String(artista.id);
+        document.getElementById('art-id').value = artistaId;
+        datosActuacion.idArtista = artista.id;
+        await peticionEscaleta(`${API_ESCALETA}/escaleta${actuacionId ? '/' + actuacionId : ''}`, actuacionId ? 'PUT' : 'POST', datosActuacion);
+        cancelarEdicion('artista');
+        await cargarArtistas();
+        mensaje.textContent = 'Artista y actuación guardados. Ya puedes ver la programación en Escaleta.';
+    } catch (error) {
+        mensaje.textContent = `${artistaId ? 'El artista está guardado. La actuación no se ha guardado: ' : 'No se ha guardado el artista: '}${error.message}`;
+        await cargarArtistas();
+        if (artistaId) document.getElementById('art-existente').value = artistaId;
+    } finally { boton.disabled = false; }
 });
 
 document.getElementById('form-espacio').addEventListener('submit', (e) => {

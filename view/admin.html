@@ -124,19 +124,15 @@
                     <div class="content-grid">
                         <div class="card">
                             <form id="form-artista">
+                                <p id="art-mensaje" role="status" aria-live="polite"></p>
                                 <input type="hidden" id="art-id">
-                                <div class="form-row"><label>Nombre del artista</label><input type="text" id="art-nombre" required></div>
-                                <div class="form-row"><label>Género musical</label><input type="text" id="art-genero" required></div>
+                                <input type="hidden" id="act-id">
+                                <div class="form-row"><label for="art-existente">Artista existente</label><select id="art-existente"><option value="">Nuevo artista</option></select></div>
+                                <div class="form-row"><label for="art-nombre">Nombre del artista</label><input type="text" id="art-nombre" required></div>
+                                <div class="form-row"><label for="art-genero">Género musical</label><input type="text" id="art-genero" required></div>
                                 <div class="form-row grid-2">
-                                    <div>
-                                        <label>Día</label>
-                                        <select id="art-dia">
-                                            <option value="Martes">Martes</option><option value="Miércoles">Miércoles</option>
-                                            <option value="Jueves">Jueves</option><option value="Viernes">Viernes</option>
-                                            <option value="Sábado">Sábado</option><option value="Domingo">Domingo</option>
-                                        </select>
-                                    </div>
-                                    <div><label>Escenario</label><input type="text" id="art-escenario" required></div>
+                                    <div><label for="art-fecha">Fecha</label><input type="date" id="art-fecha" required></div>
+                                    <div><label for="art-escenario">Escenario activo</label><select id="art-escenario" required><option value="">Cargando escenarios…</option></select></div>
                                 </div>
                                 <div class="form-row grid-2">
                                     <div><label>Hora Inicio</label><input type="time" id="art-horaInicio" required></div>
