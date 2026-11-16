@@ -4,7 +4,6 @@ Servicio de lectura: consulta otros microservicios via HTTP. No inventa datos
 historicos que los contratos actuales no exponen. No persiste datos propios.
 """
 from collections import Counter, defaultdict
-from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, datetime, time, timezone
 from typing import Any
 import os
@@ -172,29 +171,13 @@ def dentro_periodo(fecha: str, inicio: date | None, fin: date | None) -> bool:
     return (inicio is None or dia >= inicio) and (fin is None or dia <= fin)
 
 
-def compras_entradas():
-    clave = os.getenv("CLAVE_INTERNA_ESTADISTICAS", "")
-    if not clave:
-        raise HTTPException(503, "Clave interna de estadisticas no configurada")
-    try:
-        respuesta = httpx.get(f"{URL_ENTRADAS}/entradas/compras/resumen", headers={"X-Clave-Interna": clave}, timeout=5.0)
-        respuesta.raise_for_status()
-        compras = respuesta.json()
-        if not isinstance(compras, list):
-            raise ValueError("Respuesta no valida")
-        return compras
-    except (httpx.HTTPError, ValueError):
-        raise HTTPException(503, "No se pueden consultar las compras de Entradas")
+def ventas_entradas(inicio: date | None = None, fin: date | None = None) -> list[dict]:
+    return [v for v in lista(URL_ENTRADAS, "/entradas/ventas/resumen")
+            if dentro_periodo(v["fecha"], inicio, fin)]
 
 
-def ingresos_entradas(compras):
-    # Cada entrada cancelada descuenta su parte proporcional del precio original.
-    total = sum(((Decimal(str(c["precioTotal"])) * int(c["cantidadActiva"]) / int(c["cantidad"])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) for c in compras), Decimal("0"))
-    return float(total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
-
-
-def compras_periodo(compras, inicio, fin):
-    return [c for c in compras if dentro_periodo(c["fechaCompra"], inicio, fin)]
+def ingresos_entradas(ventas: list[dict]) -> float:
+    return sum(v["ingresosCentimos"] for v in ventas) / 100
 
 
 def compras_merch(usuarios: list[dict]) -> list[dict]:
@@ -238,15 +221,15 @@ def inicio():
 @app.get("/api/estadisticas/resumen", response_model=ResumenGeneral)
 def resumen_general():
     usuarios = lista(URL_USUARIOS, "/usuarios")
-    compras = compras_entradas()
+    ventas = ventas_entradas()
     actuaciones = lista(URL_ESCALETA, "/escaleta")
     artistas = lista(URL_ESCALETA, "/escaleta/artistas")
     espacios = lista(URL_ESPACIOS, "/espacios")
     merch = compras_merch(usuarios)
     return ResumenGeneral(
         totalUsuarios=len(usuarios),
-        entradasVendidas=sum(int(c["cantidadActiva"]) for c in compras),
-        ingresosTotales=round(ingresos_entradas(compras) + ingresos_merch(merch), 2),
+        entradasVendidas=sum(v["entradasVendidas"] for v in ventas),
+        ingresosTotales=round(ingresos_entradas(ventas) + ingresos_merch(merch), 2),
         totalActuaciones=len(actuaciones),
         totalArtistas=len(artistas),
         totalEspacios=len(espacios),
@@ -260,20 +243,20 @@ def estadisticas_entradas(
     fechaFin: date | None = None,
 ):
     validar_periodo(fechaInicio, fechaFin)
-    compras = compras_periodo(compras_entradas(), fechaInicio, fechaFin)
-    total_activas = sum(int(c["cantidadActiva"]) for c in compras)
+    ventas = ventas_entradas(fechaInicio, fechaFin)
     tipos = lista(URL_ENTRADAS, "/entradas")
     stock_total = sum(int(t["stockTotal"]) for t in tipos)
     conteos = Counter()
-    for compra in compras:
-        conteos[compra["tipoEntrada"]] += int(compra["cantidadActiva"])
+    for venta in ventas:
+        conteos[venta["tipoEntrada"]] += venta["entradasVendidas"]
+    total = sum(conteos.values())
     return EstadisticasEntradas(
-        totalVendidas=total_activas,
+        totalVendidas=total,
         entradasVIP=conteos["vip"],
         abonosCompletos=conteos["abono_completo"],
         abonosUnDia=conteos["abono_un_dia"],
-        ingresos=ingresos_entradas(compras),
-        porcentajeVendido=round(100 * total_activas / stock_total, 2)
+        ingresos=ingresos_entradas(ventas),
+        porcentajeVendido=round(100 * total / stock_total, 2)
         if stock_total else 0.0,
     )
 
@@ -285,14 +268,13 @@ def estadisticas_ingresos(
 ):
     validar_periodo(fechaInicio, fechaFin)
     usuarios = lista(URL_USUARIOS, "/usuarios")
-    compras = compras_periodo(compras_entradas(), fechaInicio, fechaFin)
-    importe_entradas = ingresos_entradas(compras)
+    importe_entradas = ingresos_entradas(ventas_entradas(fechaInicio, fechaFin))
     merch = [c for c in compras_merch(usuarios)
              if dentro_periodo(c["fechaCompra"], fechaInicio, fechaFin)]
     importe_merch = ingresos_merch(merch)
     # En la version actual no existe API de cobro de servicios adicionales.
     return EstadisticasIngresos(
-        ingresosTotales=round(importe_merch + importe_entradas, 2),
+        ingresosTotales=round(importe_entradas + importe_merch, 2),
         ingresosEntradas=importe_entradas,
         ingresosMerchandising=importe_merch,
     )
@@ -375,14 +357,12 @@ def ventas_por_dia(
 ):
     validar_periodo(fechaInicio, fechaFin)
     usuarios = lista(URL_USUARIOS, "/usuarios")
-    compras = compras_periodo(compras_entradas(), fechaInicio, fechaFin)
     merch = compras_merch(usuarios)
     totales = defaultdict(lambda: {"ventas": 0, "ingresos": 0.0})
-    for c in compras:
-        if int(c["cantidadActiva"]) > 0:
-            dia = date.fromisoformat(c["fechaCompra"][:10])
-            totales[dia]["ventas"] += 1
-            totales[dia]["ingresos"] += ingresos_entradas([c])
+    for venta in ventas_entradas(fechaInicio, fechaFin):
+        dia = date.fromisoformat(venta["fecha"])
+        totales[dia]["ventas"] += venta["numeroVentas"]
+        totales[dia]["ingresos"] += venta["ingresosCentimos"] / 100
     for c in merch:
         if dentro_periodo(c["fechaCompra"], fechaInicio, fechaFin):
             dia = date.fromisoformat(c["fechaCompra"][:10])
