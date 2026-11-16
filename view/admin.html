@@ -56,6 +56,15 @@
         tr:hover { background: rgba(255,255,255,0.02); }
         
         .status-badge { padding: 0.3rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: bold; background: rgba(194, 255, 0, 0.1); color: #c2ff00; border: 1px solid rgba(194, 255, 0, 0.2); }
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+        .stats-card { padding:1.3rem; background:#111; border:1px solid #292929; border-radius:12px; }
+        .stats-card span { display:block; color:#aaa; font-size:.85rem; }
+        .stats-card strong { display:block; color:#c2ff00; font-size:1.8rem; margin-top:.6rem; }
+        .stats-details { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1rem; }
+        .stats-details h3 { margin-bottom:1rem; }
+        .stats-row { display:flex; justify-content:space-between; gap:1rem; border-top:1px solid #262626; padding:.7rem 0; color:#bbb; }
+        .stats-row strong { color:#fff; text-align:right; }
+        .stats-message { color:#ff9fbd; margin:1rem 0; }
         
         /* Botones de acción en tablas */
         .action-btn { background: #1a1a1f; border: 1px solid #333; color: white; padding: 0.5rem; border-radius: 6px; cursor: pointer; margin-right: 0.3rem; transition: 0.2s; font-size: 0.9rem; }
@@ -71,6 +80,7 @@
             <div class="sidebar-brand">SUBSONIC<span>ADMIN</span></div>
             <nav class="sidebar-nav">
                 <button class="nav-btn active" onclick="cambiarPestana('inicio', this)">📊 Panel de Inicio</button>
+                <button class="nav-btn" onclick="cambiarPestana('estadisticas', this); cargarEstadisticas()">📈 Estadísticas</button>
                 <button class="nav-btn" onclick="cambiarPestana('artistas', this)">🎤 Gestión Artistas</button>
                 <button class="nav-btn" onclick="cambiarPestana('espacios', this)">🗺️ Espacios y Escenarios</button>
                 <button class="nav-btn" onclick="cambiarPestana('entradas', this)">🎟️ Configurar Entradas</button>
@@ -95,6 +105,14 @@
                         <h2>Resumen del Festival</h2>
                         <p>Visión general de la configuración de Subsonic 2026.</p>
                     </div>
+                </section>
+
+                <section id="estadisticas" class="admin-section">
+                    <div class="section-header"><h2>Estadísticas del festival</h2><p>Consulta las ventas, los ingresos y el uso de espacios.</p></div>
+                    <button type="button" class="action-btn" id="stats-refresh">Actualizar datos</button>
+                    <p id="stats-status" class="stats-message" role="status" aria-live="polite"></p>
+                    <div id="stats-summary" class="stats-grid"></div>
+                    <div id="stats-details" class="stats-details"></div>
                 </section>
 
                 <!-- ARTISTAS -->
@@ -253,5 +271,6 @@
     </div>
 
     <script src="admin.js"></script>
+    <script src="estadisticas.js"></script>
 </body>
 </html>

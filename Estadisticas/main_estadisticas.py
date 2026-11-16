@@ -12,6 +12,7 @@ import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI(
@@ -25,6 +26,30 @@ URL_ENTRADAS = os.getenv("URL_ENTRADAS", "http://127.0.0.1:8000/api").rstrip("/"
 URL_ESCALETA = os.getenv("URL_ESCALETA", "http://127.0.0.1:8002/api").rstrip("/")
 URL_ESPACIOS = os.getenv("URL_ESPACIOS", "http://127.0.0.1:8003/api").rstrip("/")
 URL_MERCHANDISING = os.getenv("URL_MERCHANDISING", "http://127.0.0.1:8004/api").rstrip("/")
+
+
+@app.middleware("http")
+async def proteger_estadisticas(request, call_next):
+    if request.method != "OPTIONS" and request.url.path.startswith("/api/estadisticas"):
+        token = request.headers.get("authorization", "")
+        if not token.startswith("Bearer ") or not token[7:].strip():
+            return JSONResponse(status_code=401, content={"codigo": 401, "mensaje": "Inicia sesión como administrador"})
+        try:
+            async with httpx.AsyncClient(timeout=5) as cliente:
+                respuesta = await cliente.get(f"{URL_USUARIOS}/usuarios/sesion", headers={"Authorization": token})
+            if respuesta.status_code in (401, 403):
+                return JSONResponse(status_code=401, content={"codigo": 401, "mensaje": "La sesión no es válida"})
+            if respuesta.status_code != 200:
+                return JSONResponse(status_code=503, content={"codigo": 503, "mensaje": "No se puede verificar la sesión"})
+            if respuesta.json().get("tipo") != "administrador":
+                return JSONResponse(status_code=403, content={"codigo": 403, "mensaje": "Acceso exclusivo para administradores"})
+        except (httpx.RequestError, ValueError, AttributeError):
+            return JSONResponse(status_code=503, content={"codigo": 503, "mensaje": "No se puede verificar la sesión"})
+    return await call_next(request)
+
+app.add_middleware(CORSMiddleware,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_methods=["GET"], allow_headers=["Authorization", "Content-Type"])
 
 # ==========================================
 # MODELOS DEL YAML DE ESTADISTICAS

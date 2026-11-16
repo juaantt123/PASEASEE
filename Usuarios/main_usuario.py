@@ -345,7 +345,9 @@ def actualizar_foto(idUsuario: int, datos: FotoPerfil):
     return buscar_usuario(idUsuario)
 
 @app.patch('/api/usuarios/{idUsuario}/tipo', response_model=Usuario)
-def modificar_tipo_usuario(idUsuario: int, datos: ActualizacionTipo):
+def modificar_tipo_usuario(idUsuario: int, datos: ActualizacionTipo, authorization: str | None = Header(default=None)):
+    if usuario_de_sesion(authorization).tipo != 'administrador':
+        raise HTTPException(403, 'Solo un administrador puede modificar roles')
     buscar_usuario(idUsuario)
     with conectar() as con:
         con.execute('UPDATE usuarios SET tipo=? WHERE id=?', (datos.tipo, idUsuario))

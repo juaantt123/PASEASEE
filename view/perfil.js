@@ -160,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // LA MAGIA: Si el usuario es administrador, lo mandamos al panel oculto
             if (result.usuario.tipo === 'administrador') {
+                sessionStorage.setItem(CLAVE_SESION, JSON.stringify(result));
                 sessionStorage.setItem('tipoUsuario', 'administrador');
                 window.location.href = 'admin.html';
                 return; // Cortamos aquí para que no siga cargando el perfil
