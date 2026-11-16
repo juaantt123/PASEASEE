@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#09090d">
+    <title>Administración | Subsonic Festival 2026</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <a class="logo" href="index.html" aria-label="Subsonic Fest, inicio">SUBSONIC<span>FEST</span></a>
+        <nav aria-label="Navegación principal">
+            <ul class="nav-links">
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="entradas.html">Entradas</a></li>
+                <li><a href="escaleta.html">Escaleta</a></li>
+                <li><a href="tienda.html">Tienda</a></li>
+                <li><a href="perfil.html">Perfil</a></li>
+                <li><a href="#administracion" class="active" aria-current="page">Administración</a></li>
+            </ul>
+        </nav>
+        <button class="menu-toggle" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false">☰</button>
+    </header>
+
+    <main id="administracion" class="tickets-page">
+        <section class="tickets-hero">
+            <a class="back-link" href="index.html">&larr; Volver al inicio</a>
+            <span class="badge">PANEL DE CONTROL</span>
+            <h1>Administración <span class="gradient-text">SUBSONIC</span></h1>
+            <p>Gestiona el cartel, los horarios y los espacios del recinto.</p>
+        </section>
+
+        <section class="admin-section" aria-labelledby="admin-artists-title">
+            <div class="admin-grid">
+                <section class="admin-panel" aria-labelledby="admin-artists-title">
+                    <div class="account-heading">
+                        <span class="eyebrow">CARTEL Y HORARIOS</span>
+                        <h2 id="admin-artists-title">Artistas</h2>
+                    </div>
+                    <form id="artist-form" class="account-form">
+                        <input id="artist-id" type="hidden">
+                        <input id="performance-id" type="hidden">
+                        <div class="checkout-field">
+                            <label for="artist-name">Nombre del artista *</label>
+                            <input id="artist-name" type="text" maxlength="200" required>
+                        </div>
+                        <div class="admin-form-row">
+                            <div class="checkout-field">
+                                <label for="artist-stage">Escenario *</label>
+                                <select id="artist-stage" required>
+                                    <option value="">Cargando escenarios...</option>
+                                </select>
+                            </div>
+                            <div class="checkout-field">
+                                <label for="artist-date">Fecha *</label>
+                                <input id="artist-date" type="date" required>
+                            </div>
+                        </div>
+                        <div class="admin-form-row">
+                            <div class="checkout-field">
+                                <label for="artist-start">Hora de inicio *</label>
+                                <input id="artist-start" type="time" required>
+                            </div>
+                            <div class="checkout-field">
+                                <label for="artist-end">Hora de fin *</label>
+                                <input id="artist-end" type="time" required>
+                            </div>
+                        </div>
+                        <div class="admin-form-actions">
+                            <button id="artist-submit" class="btn btn-primary" type="submit">Añadir artista</button>
+                            <button id="artist-cancel" class="btn btn-secondary" type="button" hidden>Cancelar edición</button>
+                        </div>
+                        <p id="artist-message" class="admin-message" role="status" aria-live="polite"></p>
+                    </form>
+
+                    <div class="admin-list-heading">
+                        <h3>Artistas registrados</h3>
+                        <button id="artists-refresh" class="btn btn-secondary admin-refresh" type="button">Actualizar</button>
+                    </div>
+                    <div id="artists-list" class="admin-list" aria-live="polite">
+                        <p class="dashboard-hint">Cargando artistas...</p>
+                    </div>
+                </section>
+
+                <section class="admin-panel" aria-labelledby="admin-spaces-title">
+                    <div class="account-heading">
+                        <span class="eyebrow">RECINTO</span>
+                        <h2 id="admin-spaces-title">Espacios</h2>
+                    </div>
+                    <form id="space-form" class="account-form">
+                        <input id="space-id" type="hidden">
+                        <div class="checkout-field">
+                            <label for="space-name">Nombre *</label>
+                            <input id="space-name" type="text" maxlength="200" required>
+                        </div>
+                        <div class="admin-form-row">
+                            <div class="checkout-field">
+                                <label for="space-type">Tipo *</label>
+                                <select id="space-type" required>
+                                    <option value="comida">Comida</option>
+                                    <option value="tienda_ropa">Tienda de ropa</option>
+                                    <option value="tatuador">Tatuador</option>
+                                    <option value="servicios">Servicios</option>
+                                    <option value="descanso">Descanso</option>
+                                    <option value="otros">Otros</option>
+                                    <option value="escenario">Escenario</option>
+                                </select>
+                            </div>
+                            <div class="checkout-field">
+                                <label for="space-size">Tamaño (m²) *</label>
+                                <input id="space-size" type="number" min="1" step="1" required>
+                            </div>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="space-location">Ubicación *</label>
+                            <input id="space-location" type="text" maxlength="200" required>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="space-description">Descripción</label>
+                            <textarea id="space-description" rows="3" maxlength="1000"></textarea>
+                        </div>
+                        <div class="checkout-field">
+                            <label for="space-state">Estado *</label>
+                            <select id="space-state" required>
+                                <option value="libre">Libre</option>
+                                <option value="ocupado">Ocupado</option>
+                                <option value="mantenimiento">En mantenimiento</option>
+                            </select>
+                        </div>
+                        <div class="admin-form-actions">
+                            <button id="space-submit" class="btn btn-primary" type="submit">Añadir espacio</button>
+                            <button id="space-cancel" class="btn btn-secondary" type="button" hidden>Cancelar edición</button>
+                        </div>
+                        <p id="space-message" class="admin-message" role="status" aria-live="polite"></p>
+                    </form>
+
+                    <div class="admin-list-heading">
+                        <h3>Espacios registrados</h3>
+                        <button id="spaces-refresh" class="btn btn-secondary admin-refresh" type="button">Actualizar</button>
+                    </div>
+                    <div id="spaces-list" class="admin-list" aria-live="polite">
+                        <p class="dashboard-hint">Cargando espacios...</p>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Subsonic Festival. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="app.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

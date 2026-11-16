@@ -8,6 +8,7 @@ from urllib.request import urlopen
 
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -17,12 +18,18 @@ app = FastAPI(
     description="Gestión de los espacios del festival",
     version="1.0.0"
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 TipoEspacio = Literal[
     "escenario", "restauracion", "descanso", "servicios",
-    "merchandising", "otros"
+    "merchandising", "comida", "tienda_ropa", "tatuador", "otros"
 ]
-EstadoEspacio = Literal["activo", "mantenimiento", "cerrado"]
+EstadoEspacio = Literal["activo", "libre", "ocupado", "mantenimiento", "cerrado"]
 
 
 # Modelos de datos según el YAML
@@ -30,7 +37,8 @@ class EspacioInput(BaseModel):
     nombre: str = Field(min_length=1)
     tipo: TipoEspacio
     ubicacion: str = Field(min_length=1)
-    capacidad: int = Field(ge=1)
+    capacidad: int = Field(default=1, ge=1)
+    tamano: int = Field(default=1, ge=1)
     descripcion: str | None = None
     estado: EstadoEspacio = "activo"
 
@@ -79,6 +87,7 @@ espacios = [
         tipo="escenario",
         ubicacion="Zona Norte",
         capacidad=15000,
+        tamano=1200,
         descripcion="Escenario principal destinado a los conciertos de mayor afluencia.",
         estado="activo"
     ),
@@ -88,6 +97,7 @@ espacios = [
         tipo="restauracion",
         ubicacion="Zona Central",
         capacidad=2500,
+        tamano=350,
         descripcion="Área de puestos de comida y bebida.",
         estado="activo"
     )
@@ -164,7 +174,7 @@ def listar_espacios(
 # GET /api/espacios/activos
 @app.get("/api/espacios/activos", response_model=list[Espacio])
 def espacios_activos():
-    return [e for e in espacios if e.estado == "activo"]
+    return [e for e in espacios if e.estado in {"activo", "libre"}]
 
 
 # GET /api/espacios/disponibilidad
@@ -189,7 +199,7 @@ def consultar_disponibilidad(
         raise HTTPException(status_code=503, detail="Respuesta no válida de Escaleta")
 
     resultado = []
-    candidatos = [e for e in espacios if e.estado == "activo"]
+    candidatos = [e for e in espacios if e.estado in {"activo", "libre"}]
     if tipo is not None:
         candidatos = [e for e in candidatos if e.tipo == tipo]
 

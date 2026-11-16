@@ -18,6 +18,7 @@
                 <li><a href="escaleta.html">Escaleta</a></li>
                 <li><a href="tienda.html">Tienda</a></li>
                 <li><a href="perfil.html">Perfil</a></li>
+                <li><a href="admin.html">Administración</a></li>
             </ul>
         </nav>
         <button class="menu-toggle" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false">
@@ -74,8 +75,45 @@
                     <p>Regístrate o inicia sesión para consultar y actualizar los datos de tu cuenta.</p>
                     <span class="card-link">Acceder a mi perfil &rarr;</span>
                 </article>
+
+                <article class="card" onclick="navegarA('admin')">
+                    <div class="card-icon" aria-hidden="true">⚙️</div>
+                    <h3>Administración</h3>
+                    <p>Gestiona artistas, actuaciones y espacios del recinto.</p>
+                    <span class="card-link">Abrir panel &rarr;</span>
+                </article>
             </div>
         </section>
+
+        <!-- SECCIONES DINÁMICAS (Llamadas a la API) -->
+        <section class="accesos-container" style="padding-top: 0; padding-bottom: 3rem;">
+            
+            <!-- Contenedor Próximas Actuaciones -->
+            <div class="tickets-heading" style="margin-bottom: 2rem;">
+                <div>
+                    <span class="eyebrow">EN DIRECTO</span>
+                    <h2>Próximas Actuaciones</h2>
+                </div>
+            </div>
+            <div class="cards-grid" id="api-actuaciones">
+                <!-- Se rellena desde app.js -->
+                <p style="color: var(--text-gray);">Conectando con la API de Escaleta...</p>
+            </div>
+
+            <!-- Contenedor Productos Destacados -->
+            <div class="tickets-heading" style="margin-top: 5rem; margin-bottom: 2rem;">
+                <div>
+                    <span class="eyebrow">MERCHANDISING</span>
+                    <h2>Productos Destacados</h2>
+                </div>
+            </div>
+            <div class="shop-grid" id="api-productos">
+                <!-- Se rellena desde app.js -->
+                <p style="color: var(--text-gray);">Conectando con la API de Merchandising...</p>
+            </div>
+
+        </section>
+
     </main>
 
     <!-- Notificación flotante (Toast) para probar la navegación -->

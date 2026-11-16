@@ -53,6 +53,9 @@ paths:
               - descanso
               - servicios
               - merchandising
+              - comida
+              - tienda_ropa
+              - tatuador
               - otros
             example: escenario
 
@@ -64,6 +67,8 @@ paths:
             type: string
             enum:
               - activo
+              - libre
+              - ocupado
               - mantenimiento
               - cerrado
             example: activo
@@ -385,6 +390,9 @@ paths:
               - descanso
               - servicios
               - merchandising
+              - comida
+              - tienda_ropa
+              - tatuador
               - otros
 
       responses:
@@ -443,6 +451,9 @@ paths:
               - descanso
               - servicios
               - merchandising
+              - comida
+              - tienda_ropa
+              - tatuador
               - otros
             example: escenario
 
@@ -684,6 +695,9 @@ components:
             - descanso
             - servicios
             - merchandising
+            - comida
+            - tienda_ropa
+            - tatuador
             - otros
           example: escenario
 
@@ -695,9 +709,16 @@ components:
         capacidad:
           type: integer
           format: int64
-          description: Número máximo de personas permitido
+          description: Aforo máximo de personas permitido
           minimum: 1
           example: 15000
+
+        tamano:
+          type: integer
+          format: int64
+          description: Superficie del espacio en metros cuadrados
+          minimum: 1
+          example: 1200
 
         descripcion:
           type: string
@@ -711,6 +732,8 @@ components:
           description: Estado operativo del espacio
           enum:
             - activo
+            - libre
+            - ocupado
             - mantenimiento
             - cerrado
           example: activo
@@ -721,6 +744,7 @@ components:
         - tipo
         - ubicacion
         - capacidad
+        - tamano
         - estado
 
 
@@ -744,6 +768,9 @@ components:
             - descanso
             - servicios
             - merchandising
+            - comida
+            - tienda_ropa
+            - tatuador
             - otros
           example: escenario
 
@@ -753,11 +780,18 @@ components:
           example: "Zona Norte"
 
         capacidad:
-          description: Aforo máximo de personas permitido en el espacio.
+          description: Aforo máximo de personas permitido en el espacio (opcional).
           type: integer
           format: int64
           minimum: 1
           example: 15000
+
+        tamano:
+          description: Superficie del espacio en metros cuadrados.
+          type: integer
+          format: int64
+          minimum: 1
+          example: 1200
 
         descripcion:
           description: Texto descriptivo del recurso.
@@ -769,6 +803,8 @@ components:
           type: string
           enum:
             - activo
+            - libre
+            - ocupado
             - mantenimiento
             - cerrado
           example: activo
@@ -777,7 +813,7 @@ components:
         - nombre
         - tipo
         - ubicacion
-        - capacidad
+        - tamano
         - estado
 
 
@@ -792,6 +828,8 @@ components:
           type: string
           enum:
             - activo
+            - libre
+            - ocupado
             - mantenimiento
             - cerrado
           example: mantenimiento

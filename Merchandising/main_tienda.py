@@ -8,6 +8,7 @@ from urllib.request import urlopen
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 
@@ -15,6 +16,13 @@ app = FastAPI(
     title="API Merchandising - Subsonic Festival",
     description="Gestión de los productos de merchandising del festival",
     version="1.0.0"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 CategoriaProducto = Literal[

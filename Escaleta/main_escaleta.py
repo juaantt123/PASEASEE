@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException, Path as PathParam, Query, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError, computed_field, model_validator
 
 DB_PATH = Path(os.getenv('ESCALETA_DB', str(Path(__file__).parent / 'data' / 'escaleta.sqlite3')))
@@ -159,7 +160,13 @@ app = FastAPI(title='API Escaleta - Subsonic Festival', version='1.0.0', lifespa
                   400: 'Datos o parámetros no válidos.', 404: 'Recurso no encontrado.',
                   409: 'Conflicto de horario, recurso no operativo o dependencia existente.',
                   503: 'Espacios o la base de datos de Escaleta no están disponibles.'}.items()})
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.exception_handler(RequestValidationError)
 async def error_validacion(request, exc):
@@ -188,7 +195,7 @@ def consultar_espacio(identificador):
         raise HTTPException(503, 'No se puede consultar Espacios o su respuesta no es válida') from exc
     if espacio.id != identificador:
         raise HTTPException(503, 'Espacios ha devuelto un identificador incorrecto')
-    if espacio.tipo != 'escenario' or espacio.estado != 'activo':
+    if espacio.tipo != 'escenario' or espacio.estado not in ('activo', 'libre'):
         raise HTTPException(409, 'El espacio debe ser un escenario activo')
     return espacio
 
