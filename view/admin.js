@@ -1,425 +1,265 @@
+// --- GUARDIA DE SEGURIDAD ---
+if (sessionStorage.getItem('tipoUsuario') !== 'administrador') {
+    window.location.href = 'index.html';
+}
+
+const API_ENTRADAS = 'http://127.0.0.1:8000/api';
+const API_ESCALETA = 'http://127.0.0.1:8002/api';
 const API_ESPACIOS = 'http://127.0.0.1:8003/api';
-const API_ADMIN_ESCALETA = 'http://127.0.0.1:8002/api';
+const API_TIENDA = 'http://127.0.0.1:8004/api';
 
-let artistasAdmin = [];
-let actuacionesAdmin = [];
-let espaciosAdmin = [];
+// --- CACHÉ DE DATOS LOCALES ---
+let cache = { artistas: [], espacios: [], entradas: [], tienda: [] };
 
-async function adminRequest(url, options) {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-        let detail = `Error ${response.status}`;
-        try {
-            const body = await response.json();
-            detail = body.mensaje || body.detail || detail;
-        } catch (error) {
-            // La respuesta puede no incluir un cuerpo JSON.
-        }
-        throw new Error(detail);
-    }
-    if (response.status === 204) {
-        return null;
-    }
-    return response.json();
+function cambiarPestana(idSeccion, botonGatillo) {
+    document.querySelectorAll('.admin-section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(idSeccion).classList.add('active');
+    botonGatillo.classList.add('active');
 }
 
-function escaparHTML(value) {
-    return String(value ?? '').replace(/[&<>"']/g, character => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    })[character]);
+function cerrarSesionAdmin() {
+    sessionStorage.removeItem('tipoUsuario');
+    sessionStorage.removeItem('subsonic-sesion');
+    window.location.href = 'index.html';
 }
 
-function mostrarMensaje(elementId, mensaje, success = false) {
-    const element = document.getElementById(elementId);
-    element.textContent = mensaje;
-    element.classList.toggle('is-success', success);
-}
-
-function etiquetaTipo(tipo) {
-    const etiquetas = {
-        escenario: 'Escenario',
-        comida: 'Comida',
-        restauracion: 'Comida',
-        tienda_ropa: 'Tienda de ropa',
-        merchandising: 'Tienda de ropa',
-        tatuador: 'Tatuador',
-        servicios: 'Servicios',
-        descanso: 'Descanso',
-        otros: 'Otros'
-    };
-    return etiquetas[tipo] || tipo;
-}
-
-function etiquetaEstado(estado) {
-    const etiquetas = {
-        activo: 'Libre',
-        libre: 'Libre',
-        cerrado: 'Ocupado',
-        ocupado: 'Ocupado',
-        mantenimiento: 'En mantenimiento'
-    };
-    return etiquetas[estado] || estado;
-}
-
-function actuacionesDe(artistaId) {
-    return actuacionesAdmin.filter(actuacion => actuacion.idArtista === artistaId);
-}
-
-function renderizarArtistas() {
-    const list = document.getElementById('artists-list');
-    if (!artistasAdmin.length) {
-        list.innerHTML = '<p class="dashboard-hint">Todavía no hay artistas registrados.</p>';
-        return;
-    }
-
-    list.innerHTML = artistasAdmin.map(artista => {
-        const actuaciones = actuacionesDe(artista.id);
-        const detalles = actuaciones.length
-            ? actuaciones.map(actuacion => `
-                <div class="admin-schedule">
-                    <p>${escaparHTML(actuacion.nombreEspacio)} · ${escaparHTML(actuacion.fecha)} · ${escaparHTML(actuacion.horaInicio.slice(0, 5))}–${escaparHTML(actuacion.horaFin.slice(0, 5))}</p>
-                    <button class="admin-action" type="button" data-edit-artist="${artista.id}" data-act-id="${actuacion.id}">Editar</button>
-                </div>
-            `).join('')
-            : '<p class="dashboard-hint">Sin actuaciones programadas</p>';
-
-        return `
-            <article class="admin-item">
-                <div class="admin-item-heading">
-                    <div>
-                        <h4>${escaparHTML(artista.nombre)}</h4>
-                        <span class="admin-item-meta">ID ${artista.id} · ${actuaciones.length} ${actuaciones.length === 1 ? 'actuación' : 'actuaciones'}</span>
-                    </div>
-                    <div class="admin-item-actions">
-                        ${actuaciones.length === 0 ? `<button class="admin-action" type="button" data-edit-artist="${artista.id}">Editar</button>` : ''}
-                        <button class="admin-action is-danger" type="button" data-delete-artist="${artista.id}">Eliminar</button>
-                    </div>
-                </div>
-                ${detalles}
-            </article>
-        `;
-    }).join('');
-}
-
-function renderizarEspacios() {
-    const list = document.getElementById('spaces-list');
-    if (!espaciosAdmin.length) {
-        list.innerHTML = '<p class="dashboard-hint">Todavía no hay espacios registrados.</p>';
-        return;
-    }
-
-    list.innerHTML = espaciosAdmin.map(espacio => `
-        <article class="admin-item">
-            <div class="admin-item-heading">
-                <div>
-                    <h4>${escaparHTML(espacio.nombre)}</h4>
-                    <span class="admin-item-meta">${escaparHTML(etiquetaTipo(espacio.tipo))} · ${escaparHTML(espacio.ubicacion)} · ${escaparHTML(espacio.tamano)} m²</span>
-                </div>
-                <span class="admin-state">${escaparHTML(etiquetaEstado(espacio.estado))}</span>
-            </div>
-            ${espacio.descripcion ? `<p class="admin-description">${escaparHTML(espacio.descripcion)}</p>` : ''}
-            <div class="admin-item-actions">
-                <button class="admin-action" type="button" data-edit-space="${espacio.id}">Editar</button>
-                <button class="admin-action is-danger" type="button" data-delete-space="${espacio.id}">Eliminar</button>
-            </div>
-        </article>
-    `).join('');
-}
-
-function actualizarEscenarios() {
-    const select = document.getElementById('artist-stage');
-    const escenarios = espaciosAdmin.filter(espacio =>
-        espacio.tipo === 'escenario' && ['activo', 'libre'].includes(espacio.estado)
-    );
-    select.innerHTML = '<option value="">Selecciona un escenario</option>' +
-        escenarios.map(espacio => `<option value="${espacio.id}">${escaparHTML(espacio.nombre)}</option>`).join('');
-    select.disabled = escenarios.length === 0;
-    if (!escenarios.length) {
-        select.innerHTML = '<option value="">No hay escenarios disponibles</option>';
-    }
-}
+// ==========================================
+// FUNCIONES DE LECTURA (GET) Y RENDERIZADO
+// ==========================================
 
 async function cargarArtistas() {
-    const [artistas, actuaciones] = await Promise.all([
-        adminRequest(`${API_ADMIN_ESCALETA}/escaleta/artistas`),
-        adminRequest(`${API_ADMIN_ESCALETA}/escaleta`)
-    ]);
-    artistasAdmin = artistas;
-    actuacionesAdmin = actuaciones;
-    renderizarArtistas();
+    const tbody = document.getElementById('tabla-artistas');
+    try {
+        const res = await fetch(`${API_ESCALETA}/escaleta/artistas`);
+        if (!res.ok) throw new Error();
+        cache.artistas = await res.json();
+        tbody.innerHTML = cache.artistas.map(a => `
+            <tr>
+                <td><strong>${a.nombre}</strong></td>
+                <td>${a.genero}</td>
+                <td><small style="color:#c2ff00;">${a.dia||'-'} | ${a.horaInicio||''} - ${a.horaFin||''}</small><br><small style="color:#888;">${a.escenario||'-'}</small></td>
+                <td>
+                    <button class="action-btn" onclick="prepararEdicion('artista', ${a.id})">✏️</button>
+                    <button class="action-btn delete" onclick="eliminarRegistro('artista', ${a.id}, '${API_ESCALETA}/escaleta/artistas')">🗑️</button>
+                </td>
+            </tr>
+        `).join('') || `<tr><td colspan="4" style="text-align: center;">No hay artistas.</td></tr>`;
+    } catch (e) { tbody.innerHTML = `<tr><td colspan="4" style="color: #ff4444;">Error de conexión con API Escaleta (8002)</td></tr>`; }
 }
 
 async function cargarEspacios() {
-    espaciosAdmin = await adminRequest(`${API_ESPACIOS}/espacios`);
-    renderizarEspacios();
-    actualizarEscenarios();
-}
-
-function limpiarFormularioArtista() {
-    document.getElementById('artist-form').reset();
-    document.getElementById('artist-id').value = '';
-    document.getElementById('performance-id').value = '';
-    document.getElementById('artist-submit').textContent = 'Añadir artista';
-    document.getElementById('artist-cancel').hidden = true;
-    mostrarMensaje('artist-message', '');
-}
-
-function limpiarFormularioEspacio() {
-    document.getElementById('space-form').reset();
-    document.getElementById('space-id').value = '';
-    document.getElementById('space-submit').textContent = 'Añadir espacio';
-    document.getElementById('space-cancel').hidden = true;
-    mostrarMensaje('space-message', '');
-}
-
-function editarArtista(artistId, performanceId) {
-    const artista = artistasAdmin.find(item => item.id === artistId);
-    if (!artista) {
-        return;
-    }
-
-    const actuacion = actuacionesAdmin.find(item => item.id === performanceId);
-    document.getElementById('artist-id').value = artista.id;
-    document.getElementById('performance-id').value = actuacion ? actuacion.id : '';
-    document.getElementById('artist-name').value = artista.nombre;
-    document.getElementById('artist-stage').value = actuacion ? actuacion.idEspacio : '';
-    document.getElementById('artist-date').value = actuacion ? actuacion.fecha : '';
-    document.getElementById('artist-start').value = actuacion ? actuacion.horaInicio.slice(0, 5) : '';
-    document.getElementById('artist-end').value = actuacion ? actuacion.horaFin.slice(0, 5) : '';
-    document.getElementById('artist-submit').textContent = 'Guardar artista y horario';
-    document.getElementById('artist-cancel').hidden = false;
-    mostrarMensaje('artist-message', '');
-    document.getElementById('artist-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function editarEspacio(spaceId) {
-    const espacio = espaciosAdmin.find(item => item.id === spaceId);
-    if (!espacio) {
-        return;
-    }
-
-    const tipo = {
-        restauracion: 'comida',
-        merchandising: 'tienda_ropa'
-    }[espacio.tipo] || espacio.tipo;
-    const estado = {
-        activo: 'libre',
-        cerrado: 'ocupado'
-    }[espacio.estado] || espacio.estado;
-    document.getElementById('space-id').value = espacio.id;
-    document.getElementById('space-name').value = espacio.nombre;
-    document.getElementById('space-type').value = tipo;
-    document.getElementById('space-size').value = espacio.tamano || '';
-    document.getElementById('space-location').value = espacio.ubicacion;
-    document.getElementById('space-description').value = espacio.descripcion || '';
-    document.getElementById('space-state').value = estado;
-    document.getElementById('space-submit').textContent = 'Guardar espacio';
-    document.getElementById('space-cancel').hidden = false;
-    mostrarMensaje('space-message', '');
-    document.getElementById('space-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-async function guardarArtista(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    if (!form.reportValidity()) {
-        return;
-    }
-
-    const artistId = document.getElementById('artist-id').value;
-    const performanceId = document.getElementById('performance-id').value;
-    const artistaActual = artistasAdmin.find(item => item.id === Number(artistId));
-    const actuacionActual = actuacionesAdmin.find(item => item.id === Number(performanceId));
-    const datosArtista = {
-        nombre: document.getElementById('artist-name').value.trim(),
-        genero: artistaActual?.genero || 'sin especificar'
-    };
-    const datosActuacion = {
-        idArtista: Number(artistId) || undefined,
-        idEspacio: Number(document.getElementById('artist-stage').value),
-        fecha: document.getElementById('artist-date').value,
-        horaInicio: document.getElementById('artist-start').value,
-        horaFin: document.getElementById('artist-end').value,
-        estado: actuacionActual?.estado || 'programada'
-    };
-    let artistaGuardado = false;
-
+    const tbody = document.getElementById('tabla-espacios');
     try {
-        const artista = await adminRequest(
-            artistId ? `${API_ADMIN_ESCALETA}/escaleta/artistas/${artistId}` : `${API_ADMIN_ESCALETA}/escaleta/artistas`,
-            {
-                method: artistId ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datosArtista)
-            }
-        );
-        artistaGuardado = true;
-        datosActuacion.idArtista = artista.id;
-
-        await adminRequest(
-            performanceId
-                ? `${API_ADMIN_ESCALETA}/escaleta/${performanceId}`
-                : `${API_ADMIN_ESCALETA}/escaleta`,
-            {
-                method: performanceId ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datosActuacion)
-            }
-        );
-
-        limpiarFormularioArtista();
-        mostrarMensaje('artist-message', 'Artista y actuación guardados correctamente.', true);
-    } catch (error) {
-        const prefijo = artistaGuardado ? 'El artista se guardó, pero no se pudo guardar la actuación: ' : '';
-        mostrarMensaje('artist-message', `${prefijo}${error.message}`);
-        if (artistaGuardado) {
-            cargarArtistas().catch(refreshError =>
-                mostrarMensaje('artist-message', `${prefijo}${error.message}. No se pudo actualizar la lista: ${refreshError.message}`)
-            );
-        }
-        return;
-    }
-
-    cargarArtistas().catch(error =>
-        mostrarMensaje('artist-message', `Guardado, pero no se pudo actualizar la lista: ${error.message}`)
-    );
+        const res = await fetch(`${API_ESPACIOS}/espacios`);
+        if (!res.ok) throw new Error();
+        cache.espacios = await res.json();
+        tbody.innerHTML = cache.espacios.map(e => `
+            <tr>
+                <td><strong>${e.nombre}</strong></td>
+                <td>${e.tipo}<br><small style="color:#888;">${e.ubicacion}</small></td>
+                <td>${e.capacidad} pax</td>
+                <td><span class="status-badge">${e.estado}</span></td>
+                <td>
+                    <button class="action-btn" onclick="prepararEdicion('espacio', ${e.id})">✏️</button>
+                    <button class="action-btn delete" onclick="eliminarRegistro('espacio', ${e.id}, '${API_ESPACIOS}/espacios')">🗑️</button>
+                </td>
+            </tr>
+        `).join('') || `<tr><td colspan="5" style="text-align: center;">No hay espacios configurados.</td></tr>`;
+    } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color: #ff4444;">Error de conexión con API Espacios (8003)</td></tr>`; }
 }
 
-async function guardarEspacio(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    if (!form.reportValidity()) {
-        return;
-    }
-
-    const spaceId = document.getElementById('space-id').value;
-    const espacioActual = espaciosAdmin.find(item => item.id === Number(spaceId));
-    const datos = {
-        nombre: document.getElementById('space-name').value.trim(),
-        tipo: document.getElementById('space-type').value,
-        ubicacion: document.getElementById('space-location').value.trim(),
-        tamano: Number(document.getElementById('space-size').value),
-        capacidad: espacioActual?.capacidad || 1,
-        descripcion: document.getElementById('space-description').value.trim(),
-        estado: document.getElementById('space-state').value
-    };
-
+async function cargarEntradas() {
+    const tbody = document.getElementById('tabla-entradas');
     try {
-        await adminRequest(
-            spaceId ? `${API_ESPACIOS}/espacios/${spaceId}` : `${API_ESPACIOS}/espacios`,
-            {
-                method: spaceId ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            }
-        );
-        limpiarFormularioEspacio();
-        mostrarMensaje('space-message', 'Espacio guardado correctamente.', true);
-    } catch (error) {
-        mostrarMensaje('space-message', error.message);
-        return;
-    }
-
-    cargarEspacios().catch(error =>
-        mostrarMensaje('space-message', `Guardado, pero no se pudo actualizar la lista: ${error.message}`)
-    );
+        const res = await fetch(`${API_ENTRADAS}/entradas`);
+        if (!res.ok) throw new Error();
+        cache.entradas = await res.json();
+        tbody.innerHTML = cache.entradas.map(e => `
+            <tr>
+                <td><strong>${e.nombre}</strong><br><small style="color:#888">${e.descripcion}</small></td>
+                <td>${e.precio} €</td>
+                <td>${e.stockDisponible} / ${e.stockTotal}</td>
+                <td><span class="status-badge">${e.estado}</span></td>
+                <td>
+                    <button class="action-btn" onclick="prepararEdicion('entrada', ${e.id})">✏️</button>
+                    <button class="action-btn delete" onclick="eliminarRegistro('entrada', ${e.id}, '${API_ENTRADAS}/entradas')">🗑️</button>
+                </td>
+            </tr>
+        `).join('') || `<tr><td colspan="5" style="text-align: center;">No hay pases configurados.</td></tr>`;
+    } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color: #ff4444;">Error de conexión con API Entradas (8000)</td></tr>`; }
 }
 
-async function eliminarArtista(artistId) {
-    const artista = artistasAdmin.find(item => item.id === artistId);
-    if (!artista) {
-        return;
-    }
-    const actuaciones = actuacionesDe(artistId);
-    const aviso = actuaciones.length
-        ? `Se eliminará "${artista.nombre}" y sus ${actuaciones.length} actuaciones. ¿Continuar?`
-        : `¿Eliminar al artista "${artista.nombre}"?`;
-    if (!window.confirm(aviso)) {
-        return;
-    }
-
+async function cargarTienda() {
+    const tbody = document.getElementById('tabla-tienda');
     try {
-        for (const actuacion of actuaciones) {
-            await adminRequest(`${API_ADMIN_ESCALETA}/escaleta/${actuacion.id}`, { method: 'DELETE' });
-        }
-        await adminRequest(`${API_ADMIN_ESCALETA}/escaleta/artistas/${artistId}`, { method: 'DELETE' });
-        mostrarMensaje('artist-message', 'Artista eliminado.', true);
-    } catch (error) {
-        mostrarMensaje('artist-message', `No se pudo completar la eliminación: ${error.message}`);
-        cargarArtistas().catch(refreshError =>
-            mostrarMensaje('artist-message', `No se pudo completar la eliminación: ${error.message}. Tampoco se pudo actualizar la lista: ${refreshError.message}`)
-        );
-        return;
-    }
-    cargarArtistas().catch(error =>
-        mostrarMensaje('artist-message', `Artista eliminado, pero no se pudo actualizar la lista: ${error.message}`)
-    );
-}
-
-async function eliminarEspacio(spaceId) {
-    const espacio = espaciosAdmin.find(item => item.id === spaceId);
-    if (!espacio || !window.confirm(`¿Eliminar el espacio "${espacio.nombre}"?`)) {
-        return;
-    }
-
-    try {
-        await adminRequest(`${API_ESPACIOS}/espacios/${spaceId}`, { method: 'DELETE' });
-        mostrarMensaje('space-message', 'Espacio eliminado.', true);
-    } catch (error) {
-        mostrarMensaje('space-message', error.message);
-        return;
-    }
-    cargarEspacios().catch(error =>
-        mostrarMensaje('space-message', `Espacio eliminado, pero no se pudo actualizar la lista: ${error.message}`)
-    );
+        const res = await fetch(`${API_TIENDA}/merchandising`);
+        if (!res.ok) throw new Error();
+        cache.tienda = await res.json();
+        tbody.innerHTML = cache.tienda.map(p => `
+            <tr>
+                <td><strong>${p.nombre}</strong></td>
+                <td style="text-transform: capitalize;">${p.categoria}</td>
+                <td>${p.precio} €</td>
+                <td>${p.stock} uds</td>
+                <td>
+                    <button class="action-btn" onclick="prepararEdicion('producto', ${p.id})">✏️</button>
+                    <button class="action-btn delete" onclick="eliminarRegistro('producto', ${p.id}, '${API_TIENDA}/merchandising')">🗑️</button>
+                </td>
+            </tr>
+        `).join('') || `<tr><td colspan="5" style="text-align: center;">No hay productos.</td></tr>`;
+    } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color: #ff4444;">Error de conexión con API Tienda (8004)</td></tr>`; }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('artist-form').addEventListener('submit', guardarArtista);
-    document.getElementById('space-form').addEventListener('submit', guardarEspacio);
-    document.getElementById('artist-cancel').addEventListener('click', limpiarFormularioArtista);
-    document.getElementById('space-cancel').addEventListener('click', limpiarFormularioEspacio);
-    document.getElementById('artists-refresh').addEventListener('click', () => {
-        cargarArtistas().catch(error => mostrarMensaje('artist-message', error.message));
-    });
-    document.getElementById('spaces-refresh').addEventListener('click', () => {
-        cargarEspacios().catch(error => mostrarMensaje('space-message', error.message));
-    });
+    cargarArtistas(); cargarEspacios(); cargarEntradas(); cargarTienda();
+});
 
-    document.getElementById('artists-list').addEventListener('click', event => {
-        const editButton = event.target.closest('[data-edit-artist]');
-        if (editButton) {
-            editarArtista(Number(editButton.dataset.editArtist), Number(editButton.dataset.actId));
-            return;
-        }
-        const deleteButton = event.target.closest('[data-delete-artist]');
-        if (deleteButton) {
-            eliminarArtista(Number(deleteButton.dataset.deleteArtist));
-        }
-    });
+// ==========================================
+// MÉTODOS AUXILIARES: ELIMINAR Y PREPARAR EDICIÓN
+// ==========================================
 
-    document.getElementById('spaces-list').addEventListener('click', event => {
-        const editButton = event.target.closest('[data-edit-space]');
-        if (editButton) {
-            editarEspacio(Number(editButton.dataset.editSpace));
-            return;
+async function eliminarRegistro(tipo, id, urlBase) {
+    if (!confirm(`¿Seguro que quieres eliminar este ${tipo}?`)) return;
+    try {
+        const res = await fetch(`${urlBase}/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            if (tipo === 'artista') cargarArtistas();
+            if (tipo === 'espacio') cargarEspacios();
+            if (tipo === 'entrada') cargarEntradas();
+            if (tipo === 'producto') cargarTienda();
+        } else {
+            const err = await res.json();
+            alert(`No se pudo eliminar: ${err.mensaje || 'Restricción de base de datos'}`);
         }
-        const deleteButton = event.target.closest('[data-delete-space]');
-        if (deleteButton) {
-            eliminarEspacio(Number(deleteButton.dataset.deleteSpace));
-        }
-    });
+    } catch (e) { alert('Error de red al intentar eliminar.'); }
+}
 
-    cargarArtistas().catch(error => {
-        document.getElementById('artists-list').innerHTML = `<p class="admin-error">${escaparHTML(error.message)}</p>`;
-    });
-    cargarEspacios().catch(error => {
-        document.getElementById('spaces-list').innerHTML = `<p class="admin-error">${escaparHTML(error.message)}</p>`;
-        document.getElementById('artist-stage').innerHTML = '<option value="">No se pudieron cargar los escenarios</option>';
-        document.getElementById('artist-stage').disabled = true;
-    });
+function prepararEdicion(tipo, id) {
+    if (tipo === 'artista') {
+        const item = cache.artistas.find(x => x.id === id);
+        document.getElementById('art-id').value = item.id;
+        document.getElementById('art-nombre').value = item.nombre;
+        document.getElementById('art-genero').value = item.genero;
+        document.getElementById('art-dia').value = item.dia || 'Martes';
+        document.getElementById('art-escenario').value = item.escenario || '';
+        document.getElementById('art-horaInicio').value = item.horaInicio || '';
+        document.getElementById('art-horaFin').value = item.horaFin || '';
+        document.getElementById('btn-art-submit').innerText = 'Actualizar Artista';
+        document.getElementById('btn-art-cancel').style.display = 'block';
+    } else if (tipo === 'espacio') {
+        const item = cache.espacios.find(x => x.id === id);
+        document.getElementById('esp-id').value = item.id;
+        document.getElementById('esp-nombre').value = item.nombre;
+        document.getElementById('esp-tipo').value = item.tipo;
+        document.getElementById('esp-estado').value = item.estado;
+        document.getElementById('esp-ubicacion').value = item.ubicacion;
+        document.getElementById('esp-capacidad').value = item.capacidad;
+        document.getElementById('btn-esp-submit').innerText = 'Actualizar Espacio';
+        document.getElementById('btn-esp-cancel').style.display = 'block';
+    } else if (tipo === 'entrada') {
+        const item = cache.entradas.find(x => x.id === id);
+        document.getElementById('ent-id').value = item.id;
+        document.getElementById('ent-nombre').value = item.nombre;
+        document.getElementById('ent-desc').value = item.descripcion;
+        document.getElementById('ent-precio').value = item.precio;
+        document.getElementById('ent-cantidad').value = item.stockTotal;
+        document.getElementById('btn-ent-submit').innerText = 'Actualizar Pase';
+        document.getElementById('btn-ent-cancel').style.display = 'block';
+    } else if (tipo === 'producto') {
+        const item = cache.tienda.find(x => x.id === id);
+        document.getElementById('prod-id').value = item.id;
+        document.getElementById('prod-nombre').value = item.nombre;
+        document.getElementById('prod-categoria').value = item.categoria;
+        document.getElementById('prod-precio').value = item.precio;
+        document.getElementById('prod-stock').value = item.stock;
+        document.getElementById('btn-prod-submit').innerText = 'Actualizar Producto';
+        document.getElementById('btn-prod-cancel').style.display = 'block';
+    }
+}
+
+function cancelarEdicion(tipo) {
+    if (tipo === 'artista') {
+        document.getElementById('form-artista').reset();
+        document.getElementById('art-id').value = '';
+        document.getElementById('btn-art-submit').innerText = 'Guardar Artista';
+        document.getElementById('btn-art-cancel').style.display = 'none';
+    } else if (tipo === 'espacio') {
+        document.getElementById('form-espacio').reset();
+        document.getElementById('esp-id').value = '';
+        document.getElementById('btn-esp-submit').innerText = 'Registrar Espacio';
+        document.getElementById('btn-esp-cancel').style.display = 'none';
+    } else if (tipo === 'entrada') {
+        document.getElementById('form-entrada').reset();
+        document.getElementById('ent-id').value = '';
+        document.getElementById('btn-ent-submit').innerText = 'Guardar Pase';
+        document.getElementById('btn-ent-cancel').style.display = 'none';
+    } else if (tipo === 'producto') {
+        document.getElementById('form-producto').reset();
+        document.getElementById('prod-id').value = '';
+        document.getElementById('btn-prod-submit').innerText = 'Añadir Producto';
+        document.getElementById('btn-prod-cancel').style.display = 'none';
+    }
+}
+
+// ==========================================
+// FUNCIONES DE ESCRITURA (POST / PUT)
+// ==========================================
+
+async function enviarFormulario(urlBase, id, datos, recargarFunc, cancelarFunc) {
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `${urlBase}/${id}` : urlBase;
+    
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
+        if (res.ok) { cancelarFunc(); recargarFunc(); }
+        else { const err = await res.json(); alert(`Error: ${err.mensaje || JSON.stringify(err)}`); }
+    } catch (error) { alert(`Error conectando con la API en: ${url}`); }
+}
+
+document.getElementById('form-artista').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('art-id').value;
+    const datos = {
+        nombre: document.getElementById('art-nombre').value, genero: document.getElementById('art-genero').value,
+        dia: document.getElementById('art-dia').value, escenario: document.getElementById('art-escenario').value,
+        horaInicio: document.getElementById('art-horaInicio').value, horaFin: document.getElementById('art-horaFin').value
+    };
+    enviarFormulario(`${API_ESCALETA}/escaleta/artistas`, id, datos, cargarArtistas, () => cancelarEdicion('artista'));
+});
+
+document.getElementById('form-espacio').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('esp-id').value;
+    const datos = {
+        nombre: document.getElementById('esp-nombre').value, tipo: document.getElementById('esp-tipo').value,
+        ubicacion: document.getElementById('esp-ubicacion').value, capacidad: parseInt(document.getElementById('esp-capacidad').value),
+        estado: document.getElementById('esp-estado').value
+    };
+    enviarFormulario(`${API_ESPACIOS}/espacios`, id, datos, cargarEspacios, () => cancelarEdicion('espacio'));
+});
+
+document.getElementById('form-entrada').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('ent-id').value;
+    const datos = {
+        nombre: document.getElementById('ent-nombre').value, descripcion: document.getElementById('ent-desc').value,
+        precio: parseFloat(document.getElementById('ent-precio').value), stockTotal: parseInt(document.getElementById('ent-cantidad').value),
+        fechaInicioValidez: "2027-07-15", fechaFinValidez: "2027-07-18"
+    };
+    enviarFormulario(`${API_ENTRADAS}/entradas`, id, datos, cargarEntradas, () => cancelarEdicion('entrada'));
+});
+
+document.getElementById('form-producto').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('prod-id').value;
+    const datos = {
+        nombre: document.getElementById('prod-nombre').value, categoria: document.getElementById('prod-categoria').value,
+        precio: parseFloat(document.getElementById('prod-precio').value), stock: parseInt(document.getElementById('prod-stock').value)
+    };
+    enviarFormulario(`${API_TIENDA}/merchandising`, id, datos, cargarTienda, () => cancelarEdicion('producto'));
 });

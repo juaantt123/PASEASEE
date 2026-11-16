@@ -3,155 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#09090d">
-    <title>Administración | Subsonic Festival 2026</title>
+    <title>Dashboard Admin | Subsonic</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body { margin: 0; padding: 0; background-color: #050505; color: #fff; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
+        .dashboard-layout { display: flex; height: 100vh; width: 100vw; }
+        .sidebar { width: 260px; background: #0a0a0c; border-right: 1px solid #222; display: flex; flex-direction: column; }
+        .sidebar-brand { padding: 2rem 1.5rem; font-size: 1.5rem; font-weight: 800; letter-spacing: 1px; color: #fff; border-bottom: 1px solid #222; }
+        .sidebar-brand span { color: #c2ff00; }
+        .sidebar-nav { padding: 1.5rem 1rem; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-btn { display: flex; align-items: center; gap: 1rem; width: 100%; padding: 1rem; background: transparent; border: 1px solid transparent; color: #888; text-align: left; cursor: pointer; border-radius: 8px; font-size: 0.95rem; font-weight: 600; transition: all 0.2s ease; }
+        .nav-btn:hover { color: #fff; background: #111; }
+        .nav-btn.active { background: rgba(194, 255, 0, 0.1); color: #c2ff00; border: 1px solid rgba(194, 255, 0, 0.2); }
+        .sidebar-footer { padding: 1.5rem 1rem; border-top: 1px solid #222; }
+        .logout-btn { width: 100%; padding: 1rem; background: transparent; border: 1px solid #ff4444; color: #ff4444; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .logout-btn:hover { background: #ff4444; color: #fff; }
+        
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; background: #050505; }
+        .topbar { height: 70px; border-bottom: 1px solid #222; display: flex; justify-content: flex-end; align-items: center; padding: 0 2rem; background: #0a0a0c; }
+        .admin-badge { display: flex; align-items: center; gap: 0.75rem; background: #111; padding: 0.5rem 1rem; border-radius: 50px; border: 1px solid #333; font-size: 0.85rem; }
+        .admin-badge .dot { width: 8px; height: 8px; background: #c2ff00; border-radius: 50%; box-shadow: 0 0 8px #c2ff00; }
+        
+        .workspace { padding: 3rem; overflow-y: auto; height: calc(100vh - 70px); box-sizing: border-box; }
+        .admin-section { display: none; animation: fadeIn 0.3s ease; }
+        .admin-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .section-header { margin-bottom: 2.5rem; }
+        .section-header h2 { margin: 0; font-size: 2rem; font-weight: 700; }
+        .section-header p { color: #888; margin-top: 0.5rem; }
+        
+        .content-grid { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; align-items: start; }
+        
+        .card { background: #0a0a0c; border: 1px solid #222; border-radius: 12px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .form-row { margin-bottom: 1.5rem; }
+        .form-row.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-row label { display: block; margin-bottom: 0.5rem; color: #aaa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .form-row input, .form-row select { width: 100%; padding: 0.8rem; background: #050505; border: 1px solid #333; color: white; border-radius: 8px; font-family: inherit; font-size: 0.9rem; box-sizing: border-box; transition: 0.2s; }
+        .form-row input:focus, .form-row select:focus { outline: none; border-color: #c2ff00; box-shadow: 0 0 0 1px #c2ff00; }
+        
+        .button-group { display: flex; gap: 0.5rem; }
+        .submit-btn { flex: 1; background: #c2ff00; color: #000; padding: 1rem; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+        .submit-btn:hover { background: #a8dd00; transform: translateY(-2px); }
+        .cancel-btn { display: none; background: transparent; border: 1px solid #555; color: #aaa; padding: 1rem; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .cancel-btn:hover { background: #222; color: #fff; }
+
+        .table-container { background: #0a0a0c; border: 1px solid #222; border-radius: 12px; overflow: hidden; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 600px; }
+        th { background: #111; padding: 1rem; font-size: 0.85rem; text-transform: uppercase; color: #888; letter-spacing: 1px; border-bottom: 1px solid #222; }
+        td { padding: 1rem; border-bottom: 1px solid #222; font-size: 0.95rem; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        
+        .status-badge { padding: 0.3rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: bold; background: rgba(194, 255, 0, 0.1); color: #c2ff00; border: 1px solid rgba(194, 255, 0, 0.2); }
+        
+        /* Botones de acción en tablas */
+        .action-btn { background: #1a1a1f; border: 1px solid #333; color: white; padding: 0.5rem; border-radius: 6px; cursor: pointer; margin-right: 0.3rem; transition: 0.2s; font-size: 0.9rem; }
+        .action-btn:hover { background: #c2ff00; color: black; border-color: #c2ff00; }
+        .action-btn.delete:hover { background: #ff4444; color: white; border-color: #ff4444; }
+    </style>
 </head>
 <body>
-    <header class="navbar">
-        <a class="logo" href="index.html" aria-label="Subsonic Fest, inicio">SUBSONIC<span>FEST</span></a>
-        <nav aria-label="Navegación principal">
-            <ul class="nav-links">
-                <li><a href="index.html">Inicio</a></li>
-                <li><a href="entradas.html">Entradas</a></li>
-                <li><a href="escaleta.html">Escaleta</a></li>
-                <li><a href="tienda.html">Tienda</a></li>
-                <li><a href="perfil.html">Perfil</a></li>
-                <li><a href="#administracion" class="active" aria-current="page">Administración</a></li>
-            </ul>
-        </nav>
-        <button class="menu-toggle" id="mobile-menu" aria-label="Abrir menú" aria-expanded="false">☰</button>
-    </header>
 
-    <main id="administracion" class="tickets-page">
-        <section class="tickets-hero">
-            <a class="back-link" href="index.html">&larr; Volver al inicio</a>
-            <span class="badge">PANEL DE CONTROL</span>
-            <h1>Administración <span class="gradient-text">SUBSONIC</span></h1>
-            <p>Gestiona el cartel, los horarios y los espacios del recinto.</p>
-        </section>
-
-        <section class="admin-section" aria-labelledby="admin-artists-title">
-            <div class="admin-grid">
-                <section class="admin-panel" aria-labelledby="admin-artists-title">
-                    <div class="account-heading">
-                        <span class="eyebrow">CARTEL Y HORARIOS</span>
-                        <h2 id="admin-artists-title">Artistas</h2>
-                    </div>
-                    <form id="artist-form" class="account-form">
-                        <input id="artist-id" type="hidden">
-                        <input id="performance-id" type="hidden">
-                        <div class="checkout-field">
-                            <label for="artist-name">Nombre del artista *</label>
-                            <input id="artist-name" type="text" maxlength="200" required>
-                        </div>
-                        <div class="admin-form-row">
-                            <div class="checkout-field">
-                                <label for="artist-stage">Escenario *</label>
-                                <select id="artist-stage" required>
-                                    <option value="">Cargando escenarios...</option>
-                                </select>
-                            </div>
-                            <div class="checkout-field">
-                                <label for="artist-date">Fecha *</label>
-                                <input id="artist-date" type="date" required>
-                            </div>
-                        </div>
-                        <div class="admin-form-row">
-                            <div class="checkout-field">
-                                <label for="artist-start">Hora de inicio *</label>
-                                <input id="artist-start" type="time" required>
-                            </div>
-                            <div class="checkout-field">
-                                <label for="artist-end">Hora de fin *</label>
-                                <input id="artist-end" type="time" required>
-                            </div>
-                        </div>
-                        <div class="admin-form-actions">
-                            <button id="artist-submit" class="btn btn-primary" type="submit">Añadir artista</button>
-                            <button id="artist-cancel" class="btn btn-secondary" type="button" hidden>Cancelar edición</button>
-                        </div>
-                        <p id="artist-message" class="admin-message" role="status" aria-live="polite"></p>
-                    </form>
-
-                    <div class="admin-list-heading">
-                        <h3>Artistas registrados</h3>
-                        <button id="artists-refresh" class="btn btn-secondary admin-refresh" type="button">Actualizar</button>
-                    </div>
-                    <div id="artists-list" class="admin-list" aria-live="polite">
-                        <p class="dashboard-hint">Cargando artistas...</p>
-                    </div>
-                </section>
-
-                <section class="admin-panel" aria-labelledby="admin-spaces-title">
-                    <div class="account-heading">
-                        <span class="eyebrow">RECINTO</span>
-                        <h2 id="admin-spaces-title">Espacios</h2>
-                    </div>
-                    <form id="space-form" class="account-form">
-                        <input id="space-id" type="hidden">
-                        <div class="checkout-field">
-                            <label for="space-name">Nombre *</label>
-                            <input id="space-name" type="text" maxlength="200" required>
-                        </div>
-                        <div class="admin-form-row">
-                            <div class="checkout-field">
-                                <label for="space-type">Tipo *</label>
-                                <select id="space-type" required>
-                                    <option value="comida">Comida</option>
-                                    <option value="tienda_ropa">Tienda de ropa</option>
-                                    <option value="tatuador">Tatuador</option>
-                                    <option value="servicios">Servicios</option>
-                                    <option value="descanso">Descanso</option>
-                                    <option value="otros">Otros</option>
-                                    <option value="escenario">Escenario</option>
-                                </select>
-                            </div>
-                            <div class="checkout-field">
-                                <label for="space-size">Tamaño (m²) *</label>
-                                <input id="space-size" type="number" min="1" step="1" required>
-                            </div>
-                        </div>
-                        <div class="checkout-field">
-                            <label for="space-location">Ubicación *</label>
-                            <input id="space-location" type="text" maxlength="200" required>
-                        </div>
-                        <div class="checkout-field">
-                            <label for="space-description">Descripción</label>
-                            <textarea id="space-description" rows="3" maxlength="1000"></textarea>
-                        </div>
-                        <div class="checkout-field">
-                            <label for="space-state">Estado *</label>
-                            <select id="space-state" required>
-                                <option value="libre">Libre</option>
-                                <option value="ocupado">Ocupado</option>
-                                <option value="mantenimiento">En mantenimiento</option>
-                            </select>
-                        </div>
-                        <div class="admin-form-actions">
-                            <button id="space-submit" class="btn btn-primary" type="submit">Añadir espacio</button>
-                            <button id="space-cancel" class="btn btn-secondary" type="button" hidden>Cancelar edición</button>
-                        </div>
-                        <p id="space-message" class="admin-message" role="status" aria-live="polite"></p>
-                    </form>
-
-                    <div class="admin-list-heading">
-                        <h3>Espacios registrados</h3>
-                        <button id="spaces-refresh" class="btn btn-secondary admin-refresh" type="button">Actualizar</button>
-                    </div>
-                    <div id="spaces-list" class="admin-list" aria-live="polite">
-                        <p class="dashboard-hint">Cargando espacios...</p>
-                    </div>
-                </section>
+    <div class="dashboard-layout">
+        <!-- BARRA LATERAL -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">SUBSONIC<span>ADMIN</span></div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" onclick="cambiarPestana('inicio', this)">📊 Panel de Inicio</button>
+                <button class="nav-btn" onclick="cambiarPestana('artistas', this)">🎤 Gestión Artistas</button>
+                <button class="nav-btn" onclick="cambiarPestana('espacios', this)">🗺️ Espacios y Escenarios</button>
+                <button class="nav-btn" onclick="cambiarPestana('entradas', this)">🎟️ Configurar Entradas</button>
+                <button class="nav-btn" onclick="cambiarPestana('tienda', this)">👕 Inventario Tienda</button>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="cerrarSesionAdmin()">Cerrar Sesión</button>
             </div>
-        </section>
-    </main>
+        </aside>
 
-    <footer>
-        <p>&copy; 2026 Subsonic Festival. Todos los derechos reservados.</p>
-    </footer>
+        <!-- ÁREA PRINCIPAL -->
+        <div class="main-wrapper">
+            <header class="topbar">
+                <div class="admin-badge"><span class="dot"></span>admin@subsonic.com</div>
+            </header>
 
-    <script src="app.js"></script>
+            <main class="workspace">
+                
+                <!-- INICIO -->
+                <section id="inicio" class="admin-section active">
+                    <div class="section-header">
+                        <h2>Resumen del Festival</h2>
+                        <p>Visión general de la configuración de Subsonic 2026.</p>
+                    </div>
+                </section>
+
+                <!-- ARTISTAS -->
+                <section id="artistas" class="admin-section">
+                    <div class="section-header">
+                        <h2>Gestión de Artistas y Horarios</h2>
+                        <p>Añade y modifica el talento en la Escaleta.</p>
+                    </div>
+                    <div class="content-grid">
+                        <div class="card">
+                            <form id="form-artista">
+                                <input type="hidden" id="art-id">
+                                <div class="form-row"><label>Nombre del artista</label><input type="text" id="art-nombre" required></div>
+                                <div class="form-row"><label>Género musical</label><input type="text" id="art-genero" required></div>
+                                <div class="form-row grid-2">
+                                    <div>
+                                        <label>Día</label>
+                                        <select id="art-dia">
+                                            <option value="Martes">Martes</option><option value="Miércoles">Miércoles</option>
+                                            <option value="Jueves">Jueves</option><option value="Viernes">Viernes</option>
+                                            <option value="Sábado">Sábado</option><option value="Domingo">Domingo</option>
+                                        </select>
+                                    </div>
+                                    <div><label>Escenario</label><input type="text" id="art-escenario" required></div>
+                                </div>
+                                <div class="form-row grid-2">
+                                    <div><label>Hora Inicio</label><input type="time" id="art-horaInicio" required></div>
+                                    <div><label>Hora Fin</label><input type="time" id="art-horaFin" required></div>
+                                </div>
+                                <div class="button-group">
+                                    <button type="submit" class="submit-btn" id="btn-art-submit">Guardar Artista</button>
+                                    <button type="button" class="cancel-btn" id="btn-art-cancel" onclick="cancelarEdicion('artista')">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>Nombre</th><th>Género</th><th>Programación</th><th>Acciones</th></tr></thead>
+                                <tbody id="tabla-artistas"><tr><td colspan="4" style="text-align: center;">Cargando...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ESPACIOS -->
+                <section id="espacios" class="admin-section">
+                    <div class="section-header">
+                        <h2>Gestión de Espacios</h2>
+                        <p>Configura y edita los escenarios y zonas del recinto.</p>
+                    </div>
+                    <div class="content-grid">
+                        <div class="card">
+                            <form id="form-espacio">
+                                <input type="hidden" id="esp-id">
+                                <div class="form-row"><label>Nombre del espacio</label><input type="text" id="esp-nombre" required></div>
+                                <div class="form-row grid-2">
+                                    <div>
+                                        <label>Tipo</label>
+                                        <select id="esp-tipo">
+                                            <option value="Escenario">Escenario</option><option value="Zona VIP">Zona VIP</option>
+                                            <option value="Baños">Baños</option><option value="Barras">Barras / Comida</option>
+                                            <option value="Emergencias">Punto de Emergencia</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label>Estado</label>
+                                        <select id="esp-estado">
+                                            <option value="Abierto">Abierto</option><option value="Mantenimiento">En mantenimiento</option>
+                                            <option value="Cerrado">Cerrado</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row"><label>Ubicación</label><input type="text" id="esp-ubicacion" required></div>
+                                <div class="form-row"><label>Capacidad Máxima</label><input type="number" id="esp-capacidad" min="0" required></div>
+                                <div class="button-group">
+                                    <button type="submit" class="submit-btn" id="btn-esp-submit">Registrar Espacio</button>
+                                    <button type="button" class="cancel-btn" id="btn-esp-cancel" onclick="cancelarEdicion('espacio')">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>Nombre</th><th>Tipo / Ubicación</th><th>Aforo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                                <tbody id="tabla-espacios"><tr><td colspan="5" style="text-align: center;">Cargando...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ENTRADAS -->
+                <section id="entradas" class="admin-section">
+                    <div class="section-header">
+                        <h2>Configuración de Entradas</h2>
+                        <p>Añade o edita precios y aforos de pases.</p>
+                    </div>
+                    <div class="content-grid">
+                        <div class="card">
+                            <form id="form-entrada">
+                                <input type="hidden" id="ent-id">
+                                <div class="form-row"><label>Identificador interno</label><input type="text" id="ent-nombre" required></div>
+                                <div class="form-row"><label>Descripción para el cliente</label><input type="text" id="ent-desc" required></div>
+                                <div class="form-row"><label>Precio (€)</label><input type="number" id="ent-precio" step="0.01" min="0" required></div>
+                                <div class="form-row"><label>Stock Total</label><input type="number" id="ent-cantidad" min="1" required></div>
+                                <div class="button-group">
+                                    <button type="submit" class="submit-btn" id="btn-ent-submit">Guardar Pase</button>
+                                    <button type="button" class="cancel-btn" id="btn-ent-cancel" onclick="cancelarEdicion('entrada')">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>Tipo</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+                                <tbody id="tabla-entradas"><tr><td colspan="5" style="text-align: center;">Cargando...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TIENDA -->
+                <section id="tienda" class="admin-section">
+                    <div class="section-header">
+                        <h2>Inventario de Tienda</h2>
+                        <p>Actualiza existencias y precios del merchandising.</p>
+                    </div>
+                    <div class="content-grid">
+                        <div class="card">
+                            <form id="form-producto">
+                                <input type="hidden" id="prod-id">
+                                <div class="form-row"><label>Nombre del artículo</label><input type="text" id="prod-nombre" required></div>
+                                <div class="form-row">
+                                    <label>Categoría</label>
+                                    <select id="prod-categoria">
+                                        <option value="camiseta">Camiseta</option><option value="sudadera">Sudadera</option>
+                                        <option value="accesorio">Accesorio</option><option value="poster">Póster</option>
+                                    </select>
+                                </div>
+                                <div class="form-row"><label>Precio (€)</label><input type="number" id="prod-precio" step="0.01" min="0" required></div>
+                                <div class="form-row"><label>Stock</label><input type="number" id="prod-stock" min="1" required></div>
+                                <div class="button-group">
+                                    <button type="submit" class="submit-btn" id="btn-prod-submit">Añadir Producto</button>
+                                    <button type="button" class="cancel-btn" id="btn-prod-cancel" onclick="cancelarEdicion('producto')">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr></thead>
+                                <tbody id="tabla-tienda"><tr><td colspan="5" style="text-align: center;">Cargando...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
     <script src="admin.js"></script>
 </body>
 </html>
