@@ -157,6 +157,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             document.getElementById('login-password').value = '';
+            
+            // LA MAGIA: Si el usuario es administrador, lo mandamos al panel oculto
+            if (result.usuario.tipo === 'administrador') {
+                sessionStorage.setItem('tipoUsuario', 'administrador');
+                window.location.href = 'admin.html';
+                return; // Cortamos aquí para que no siga cargando el perfil
+            }
+
+            // Si es un cliente normal, sigue el flujo habitual
+            sessionStorage.setItem('tipoUsuario', 'cliente');
             const persisted = saveSession(result);
             showMessage(
                 persisted

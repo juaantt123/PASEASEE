@@ -1,8 +1,11 @@
 from datetime import date, datetime, timezone
+import os
 from typing import Literal
 import hashlib
 import hmac
 import secrets
+os.environ["SUBSONIC_ADMIN_EMAIL"] = "admin@subsonic.com"
+os.environ["SUBSONIC_ADMIN_PASSWORD"] = "admin12345"
 import sqlite3
 
 from fastapi import FastAPI, Header, HTTPException
@@ -349,3 +352,20 @@ def modificar_tipo_usuario(idUsuario: int, datos: ActualizacionTipo):
     return buscar_usuario(idUsuario)
 
 inicializar()
+
+# ==========================================
+# CREACIÓN AUTOMÁTICA DEL ADMINISTRADOR
+# ==========================================
+def asegurar_administrador():
+    with conectar() as con:
+        # Comprobamos si el admin ya está en la base de datos
+        admin_existe = con.execute("SELECT 1 FROM usuarios WHERE email='admin@subsonic.com'").fetchone()
+        
+        if not admin_existe:
+            salt, hash_password = generar_hash("admin12345")
+            con.execute('''
+                INSERT INTO usuarios (nombre, apellidos, email, tipo, fechaRegistro, salt, hash_password)
+                VALUES ('Administrador', 'Subsonic', 'admin@subsonic.com', 'administrador', ?, ?, ?)
+            ''', (datetime.now(timezone.utc).isoformat(), salt, hash_password))
+
+asegurar_administrador()
