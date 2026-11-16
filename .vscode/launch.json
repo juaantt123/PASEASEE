@@ -5,7 +5,7 @@
             "type": "msedge",
             "request": "launch",
             "name": "Abrir en Edge (Archivo local)",
-            "file": "${workspaceFolder}/index.html"
+            "file": "${workspaceFolder}/view/index.html"
         }
     ]
 }

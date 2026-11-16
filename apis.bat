@@ -1,22 +1,19 @@
 @echo off
-echo Iniciando todos los microservicios de Subsonic Festival...
-
-:: API Entradas (Puerto 8000)
-start "API Entradas" cmd /k "cd Entradas && "python -m uvicorn main_entradas:app --port 8000 --reload"
-
-:: API Usuarios (Puerto 8001)
-start "API Usuarios" cmd /k "cd Usuarios && "python -m uvicorn main_usuario:app --port 8001 --reload"
-
-:: API Escaleta (Puerto 8002)
-start "API Escaleta" cmd /k "cd Escaleta && "python -m uvicorn main_escaleta:app --port 8002 --reload"
-
-:: API Espacios (Puerto 8003)
-start "API Espacios" cmd /k "cd Espacios && "python -m uvicorn main_espacios:app --port 8003 --reload"
-
-:: API Tienda / Merchandising (Puerto 8004)
-start "API Tienda" cmd /k "cd Tienda && "python -m uvicorn main_tienda:app --port 8004 --reload"
-
-:: API Estadisticas (Puerto 8005)
-start "API Estadisticas" cmd /k "cd Estadisticas && "python -m uvicorn main_estadisticas:app --port 8005 --reload"
-
-echo Las APIs se estan iniciando en ventanas separadas.
+cd /d "%~dp0"
+if not defined CLAVE_INTERNA_ESTADISTICAS (
+    echo Configura primero CLAVE_INTERNA_ESTADISTICAS. Consulta el README.
+    pause
+    exit /b 1
+)
+if not exist ".venv\Scripts\python.exe" (
+    echo No se encuentra .venv. Instala las dependencias siguiendo el README.
+    pause
+    exit /b 1
+)
+start "API Entradas" cmd /k ""%~dp0.venv\Scripts\python.exe" -m uvicorn Entradas.main_entradas:app --port 8000 --reload"
+start "API Usuarios" cmd /k ""%~dp0.venv\Scripts\python.exe" -m uvicorn Usuarios.main_usuario:app --port 8001 --reload"
+start "API Escaleta" cmd /k ""%~dp0.venv\Scripts\python.exe" -m uvicorn Escaleta.main_escaleta:app --port 8002 --reload"
+start "API Espacios" cmd /k ""%~dp0.venv\Scripts\python.exe" -m uvicorn Espacios.main_espacios:app --port 8003 --reload"
+start "API Merchandising" cmd /k ""%~dp0.venv\Scripts\python.exe" -m uvicorn Merchandising.main_tienda:app --port 8004 --reload"
+start "API Estadisticas" cmd /k ""%~dp0.venv\Scripts\python.exe" -m uvicorn Estadisticas.main_estadisticas:app --port 8005 --reload"
+echo Iniciando los microservicios en ventanas separadas.

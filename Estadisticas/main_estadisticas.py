@@ -4,6 +4,7 @@ Servicio de lectura: consulta otros microservicios via HTTP. No inventa datos
 historicos que los contratos actuales no exponen. No persiste datos propios.
 """
 from collections import Counter, defaultdict
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, datetime, time, timezone
 from typing import Any
 import os
@@ -171,12 +172,29 @@ def dentro_periodo(fecha: str, inicio: date | None, fin: date | None) -> bool:
     return (inicio is None or dia >= inicio) and (fin is None or dia <= fin)
 
 
-def usuarios_y_entradas() -> tuple[list[dict], list[dict]]:
-    usuarios = lista(URL_USUARIOS, "/usuarios")
-    entradas = []
-    for usuario in usuarios:
-        entradas.extend(lista(URL_ENTRADAS, f"/entradas/usuarios/{usuario['id']}"))
-    return usuarios, entradas
+def compras_entradas():
+    clave = os.getenv("CLAVE_INTERNA_ESTADISTICAS", "")
+    if not clave:
+        raise HTTPException(503, "Clave interna de estadisticas no configurada")
+    try:
+        respuesta = httpx.get(f"{URL_ENTRADAS}/entradas/compras/resumen", headers={"X-Clave-Interna": clave}, timeout=5.0)
+        respuesta.raise_for_status()
+        compras = respuesta.json()
+        if not isinstance(compras, list):
+            raise ValueError("Respuesta no valida")
+        return compras
+    except (httpx.HTTPError, ValueError):
+        raise HTTPException(503, "No se pueden consultar las compras de Entradas")
+
+
+def ingresos_entradas(compras):
+    # Cada entrada cancelada descuenta su parte proporcional del precio original.
+    total = sum(((Decimal(str(c["precioTotal"])) * int(c["cantidadActiva"]) / int(c["cantidad"])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) for c in compras), Decimal("0"))
+    return float(total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
+def compras_periodo(compras, inicio, fin):
+    return [c for c in compras if dentro_periodo(c["fechaCompra"], inicio, fin)]
 
 
 def compras_merch(usuarios: list[dict]) -> list[dict]:
@@ -191,21 +209,6 @@ def compras_merch(usuarios: list[dict]) -> list[dict]:
 
 def ingresos_merch(compras: list[dict]) -> float:
     return round(sum(float(c["precioTotal"]) for c in compras), 2)
-
-
-def exigir_ingresos_entradas(entradas: list[dict]):
-    """El YAML de EntradaUsuario carece de precio historico e idCompra."""
-    if any(e.get("estado") != "cancelada" for e in entradas):
-        raise HTTPException(
-            503,
-            "No se pueden calcular ingresos historicos de entradas: "
-            "EntradaUsuario no incluye precioTotal ni idCompra. "
-            "Se necesita un endpoint de ventas/compras agregables en Entradas.",
-        )
-
-
-def entradas_activas(entradas: list[dict]) -> list[dict]:
-    return [e for e in entradas if e.get("estado") != "cancelada"]
 
 
 def id_actuacion(act: dict) -> int:
@@ -234,16 +237,16 @@ def inicio():
 
 @app.get("/api/estadisticas/resumen", response_model=ResumenGeneral)
 def resumen_general():
-    usuarios, entradas = usuarios_y_entradas()
-    exigir_ingresos_entradas(entradas)
+    usuarios = lista(URL_USUARIOS, "/usuarios")
+    compras = compras_entradas()
     actuaciones = lista(URL_ESCALETA, "/escaleta")
     artistas = lista(URL_ESCALETA, "/escaleta/artistas")
     espacios = lista(URL_ESPACIOS, "/espacios")
     merch = compras_merch(usuarios)
     return ResumenGeneral(
         totalUsuarios=len(usuarios),
-        entradasVendidas=len(entradas_activas(entradas)),
-        ingresosTotales=ingresos_merch(merch),
+        entradasVendidas=sum(int(c["cantidadActiva"]) for c in compras),
+        ingresosTotales=round(ingresos_entradas(compras) + ingresos_merch(merch), 2),
         totalActuaciones=len(actuaciones),
         totalArtistas=len(artistas),
         totalEspacios=len(espacios),
@@ -257,21 +260,20 @@ def estadisticas_entradas(
     fechaFin: date | None = None,
 ):
     validar_periodo(fechaInicio, fechaFin)
-    _, entradas = usuarios_y_entradas()
-    filtradas = [e for e in entradas_activas(entradas)
-                if dentro_periodo(e["fechaCompra"], fechaInicio, fechaFin)]
-    # No se pueden reconstruir importes historicos a partir de entradas individuales.
-    exigir_ingresos_entradas(filtradas)
+    compras = compras_periodo(compras_entradas(), fechaInicio, fechaFin)
+    total_activas = sum(int(c["cantidadActiva"]) for c in compras)
     tipos = lista(URL_ENTRADAS, "/entradas")
     stock_total = sum(int(t["stockTotal"]) for t in tipos)
-    conteos = Counter(e["tipoEntrada"] for e in filtradas)
+    conteos = Counter()
+    for compra in compras:
+        conteos[compra["tipoEntrada"]] += int(compra["cantidadActiva"])
     return EstadisticasEntradas(
-        totalVendidas=len(filtradas),
+        totalVendidas=total_activas,
         entradasVIP=conteos["vip"],
         abonosCompletos=conteos["abono_completo"],
         abonosUnDia=conteos["abono_un_dia"],
-        ingresos=0.0,
-        porcentajeVendido=round(100 * len(filtradas) / stock_total, 2)
+        ingresos=ingresos_entradas(compras),
+        porcentajeVendido=round(100 * total_activas / stock_total, 2)
         if stock_total else 0.0,
     )
 
@@ -282,17 +284,16 @@ def estadisticas_ingresos(
     fechaFin: date | None = None,
 ):
     validar_periodo(fechaInicio, fechaFin)
-    usuarios, entradas = usuarios_y_entradas()
-    filtradas = [e for e in entradas_activas(entradas)
-                if dentro_periodo(e["fechaCompra"], fechaInicio, fechaFin)]
-    exigir_ingresos_entradas(filtradas)
+    usuarios = lista(URL_USUARIOS, "/usuarios")
+    compras = compras_periodo(compras_entradas(), fechaInicio, fechaFin)
+    importe_entradas = ingresos_entradas(compras)
     merch = [c for c in compras_merch(usuarios)
              if dentro_periodo(c["fechaCompra"], fechaInicio, fechaFin)]
     importe_merch = ingresos_merch(merch)
     # En la version actual no existe API de cobro de servicios adicionales.
     return EstadisticasIngresos(
-        ingresosTotales=importe_merch,
-        ingresosEntradas=0.0,
+        ingresosTotales=round(importe_merch + importe_entradas, 2),
+        ingresosEntradas=importe_entradas,
         ingresosMerchandising=importe_merch,
     )
 
@@ -373,13 +374,15 @@ def ventas_por_dia(
     fechaFin: date | None = None,
 ):
     validar_periodo(fechaInicio, fechaFin)
-    usuarios, entradas = usuarios_y_entradas()
-    filtradas = [e for e in entradas_activas(entradas)
-                if dentro_periodo(e["fechaCompra"], fechaInicio, fechaFin)]
-    # Los tickets individuales no permiten reconstruir compras ni ingresos historicos.
-    exigir_ingresos_entradas(filtradas)
+    usuarios = lista(URL_USUARIOS, "/usuarios")
+    compras = compras_periodo(compras_entradas(), fechaInicio, fechaFin)
     merch = compras_merch(usuarios)
     totales = defaultdict(lambda: {"ventas": 0, "ingresos": 0.0})
+    for c in compras:
+        if int(c["cantidadActiva"]) > 0:
+            dia = date.fromisoformat(c["fechaCompra"][:10])
+            totales[dia]["ventas"] += 1
+            totales[dia]["ingresos"] += ingresos_entradas([c])
     for c in merch:
         if dentro_periodo(c["fechaCompra"], fechaInicio, fechaFin):
             dia = date.fromisoformat(c["fechaCompra"][:10])
