@@ -10,7 +10,8 @@ info:
 
     Entradas consulta Usuarios mediante GET /usuarios/{idUsuario} y
     GET /usuarios/{idUsuario}/metodos-pago durante la compra. Front-end
-    y Estadísticas consultan aquí los tipos y las entradas de usuarios.
+    consulta los tipos y las entradas de usuarios. Estadísticas consulta
+    los tipos y el resumen agregado de ventas.
   version: 1.0.0
 
 servers:
@@ -337,6 +338,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+
+  /entradas/ventas/resumen:
+    get:
+      tags:
+        - Compras
+      summary: Obtener totales de ventas por día y tipo de entrada
+      operationId: entradas_get_entradas_ventas_resumen
+      description: >
+        Agrupa por fecha de compra en UTC y por tipo. Excluye las entradas
+        canceladas y prorratea el importe original en cancelaciones parciales.
+        No incluye datos de usuarios, identificadores de compra ni códigos de entradas.
+      responses:
+        '200':
+          description: Resumen de ventas obtenido correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [fecha, tipoEntrada, entradasVendidas, numeroVentas, ingresosCentimos]
+                  properties:
+                    fecha:
+                      type: string
+                      format: date
+                    tipoEntrada:
+                      type: string
+                    entradasVendidas:
+                      type: integer
+                      description: Unidades compradas que no se han cancelado.
+                    numeroVentas:
+                      type: integer
+                      description: Compras con al menos una unidad sin cancelar.
+                    ingresosCentimos:
+                      type: integer
+                      description: Importe histórico de las unidades sin cancelar, en céntimos.
 
   /entradas/comprar:
     post:

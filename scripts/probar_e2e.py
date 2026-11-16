@@ -211,23 +211,60 @@ FLUJOS = {
 }
 
 
-class EstadisticasSinSesion(AssertionError):
-    """Estadísticas todavía usa la ruta privada de entradas como fuente global."""
-
-
 def comprobar_resumen(pedir):
-    respuesta = pedir("Estadisticas", "GET", "/estadisticas/resumen", None)
-    if respuesta.status_code == 503:
-        datos = respuesta.json()
-        if datos.get("codigo") == 503 and "/entradas/usuarios/" in datos.get("mensaje", "") \
-                and "(HTTP 401)" in datos["mensaje"]:
-            raise EstadisticasSinSesion(datos["mensaje"])
-    assert respuesta.status_code == 200, (
-        f"Se esperaba 200 para el resumen; se recibió {respuesta.status_code}: {respuesta.text}"
-    )
-    resumen = respuesta.json()
-    assert resumen["totalUsuarios"] >= 1
-    assert resumen["totalEspacios"] >= 1
+    ruta = "/estadisticas/resumen"
+    antes = pedir("Estadisticas", "GET", ruta)
+    ruta_diaria = "/estadisticas/ventas-por-dia"
+    diarias_antes = {v["fecha"]: v for v in pedir("Estadisticas", "GET", ruta_diaria)}
+    usuario, pago, sesion = registrar(pedir)
+    tipo = pedir("Entradas", "GET", "/entradas/1")
+    compra = pedir("Entradas", "POST", "/entradas/comprar", 201, json={
+        "idUsuario": usuario, "idTipoEntrada": tipo["id"], "cantidad": 2,
+        "idMetodoPago": pago,
+    })
+    dia = compra["fechaCompra"][:10]
+    periodo = {"fechaInicio": dia, "fechaFin": dia}
+    base_diaria = diarias_antes.get(dia, {"numeroVentas": 0, "ingresos": 0.0})
+    # La venta debe conservar el precio original aunque luego cambie el catálogo.
+    campos = ("nombre", "descripcion", "stockTotal", "fechaInicioValidez", "fechaFinValidez")
+    cambios = {k: tipo[k] for k in campos} | {"precio": tipo["precio"] + 10}
+    pedir("Entradas", "PUT", "/entradas/1", json=cambios)
+
+    actual = pedir("Estadisticas", "GET", ruta)
+    assert actual["totalUsuarios"] == antes["totalUsuarios"] + 1
+    assert actual["totalEspacios"] == antes["totalEspacios"]
+    assert actual["entradasVendidas"] == antes["entradasVendidas"] + 2
+    assert actual["ingresosTotales"] == round(antes["ingresosTotales"] + compra["precioTotal"], 2)
+
+    assert pedir("Estadisticas", "GET", ruta_diaria, params=periodo) == [{
+        "fecha": dia, "numeroVentas": base_diaria["numeroVentas"] + 1,
+        "ingresos": round(base_diaria["ingresos"] + compra["precioTotal"], 2),
+    }]
+
+    privadas = f"/entradas/usuarios/{usuario}"
+    pedir("Entradas", "GET", privadas, 401)
+    entradas = pedir("Entradas", "GET", privadas, headers=sesion)
+    pedir("Entradas", "PATCH", f"/entradas/{entradas[0]['idEntrada']}/cancelar")
+
+    actual = pedir("Estadisticas", "GET", ruta)
+    assert actual["entradasVendidas"] == antes["entradasVendidas"] + 1
+    assert actual["ingresosTotales"] == round(antes["ingresosTotales"] + tipo["precio"], 2)
+    ventas = pedir("Estadisticas", "GET", "/estadisticas/entradas", params=periodo)
+    ingresos = pedir("Estadisticas", "GET", "/estadisticas/ingresos", params=periodo)
+    assert ventas["ingresos"] == ingresos["ingresosEntradas"]
+    assert pedir("Estadisticas", "GET", ruta_diaria, params=periodo) == [{
+        "fecha": dia, "numeroVentas": base_diaria["numeroVentas"] + 1,
+        "ingresos": round(base_diaria["ingresos"] + tipo["precio"], 2),
+    }]
+    assert pedir("Estadisticas", "GET", "/estadisticas/entradas", params={
+        "fechaInicio": "2000-01-01", "fechaFin": "2000-01-01",
+    })["totalVendidas"] == 0
+
+    pedir("Entradas", "PATCH", f"/entradas/{entradas[1]['idEntrada']}/cancelar")
+    assert pedir("Estadisticas", "GET", ruta)["entradasVendidas"] == antes["entradasVendidas"]
+    assert pedir("Estadisticas", "GET", ruta)["ingresosTotales"] == antes["ingresosTotales"]
+    esperadas = [diarias_antes[dia]] if dia in diarias_antes else []
+    assert pedir("Estadisticas", "GET", ruta_diaria, params=periodo) == esperadas
 
 
 def main():
@@ -235,13 +272,9 @@ def main():
         for nombre, flujo in FLUJOS.items():
             flujo(pedir)
             print(f"OK - {nombre}")
-        try:
-            comprobar_resumen(pedir)
-        except EstadisticasSinSesion as exc:
-            print(f"PENDIENTE - Resumen de Estadísticas: {exc}")
-            if "--estricto" in sys.argv[1:]:
-                return 1
-    print("4 flujos extremo a extremo comprobados.")
+        comprobar_resumen(pedir)
+        print("OK - Resumen global de Estadísticas")
+    print("5 flujos extremo a extremo comprobados.")
     return 0
 
 

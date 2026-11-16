@@ -1,14 +1,21 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from fastapi import Header, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from pydantic import BaseModel
 import httpx
-import hmac
-import os
 try:
     from .persistencia import conexion, inicializar
 except ImportError:
     from persistencia import conexion, inicializar
+
+
+class ResumenVentasEntradas(BaseModel):
+    fecha: date
+    tipoEntrada: str
+    entradasVendidas: int
+    numeroVentas: int
+    ingresosCentimos: int
 
 
 def configurar(app, modelos, consultar_usuarios, url_usuarios):
@@ -65,22 +72,6 @@ def configurar(app, modelos, consultar_usuarios, url_usuarios):
         with conexion() as con:
             return buscar(con, "tipos", "nombre", nombre_tipo, "Tipo de entrada no encontrado")
 
-    @app.get('/api/entradas/compras/resumen', tags=['Estadísticas'])
-    def resumen_compras(x_clave_interna: str | None = Header(default=None)):
-        clave = os.getenv('CLAVE_INTERNA_ESTADISTICAS', '')
-        if not clave:
-            raise HTTPException(503, 'Clave interna de estadisticas no configurada')
-        if not x_clave_interna or not hmac.compare_digest(x_clave_interna, clave):
-            raise HTTPException(403, 'Acceso interno no autorizado')
-        with conexion() as con:
-            filas = con.execute("""
-                SELECT c.idCompra, c.tipoEntrada, c.cantidad, c.precioTotal, c.fechaCompra,
-                       SUM(CASE WHEN e.estado != 'cancelada' THEN 1 ELSE 0 END) AS cantidadActiva
-                FROM compras c JOIN entradas e ON e.idCompra = c.idCompra
-                GROUP BY c.idCompra ORDER BY c.idCompra
-            """).fetchall()
-            return [dict(fila) for fila in filas]
-
     @app.post("/api/entradas/comprar", response_model=CompraEntrada, status_code=201)
     def comprar(datos: CompraEntradaInput):
         consultar_usuarios(datos.idUsuario, datos.idMetodoPago)
@@ -96,6 +87,31 @@ def configurar(app, modelos, consultar_usuarios, url_usuarios):
                 con.execute("UPDATE entradas SET codigo=? WHERE idEntrada=?", (f"SUB-2027-{cur.lastrowid:06d}", cur.lastrowid))
             con.execute("UPDATE tipos SET stockDisponible=stockDisponible-?, estado=CASE WHEN stockDisponible-?=0 THEN 'agotada' ELSE 'disponible' END WHERE id=?", (datos.cantidad, datos.cantidad, t['id']))
             return buscar(con, 'compras', 'idCompra', compra_id, 'Compra no encontrada')
+
+    @app.get("/api/entradas/ventas/resumen", response_model=list[ResumenVentasEntradas])
+    def ventas_resumen():
+        # Solo totales: no se devuelven usuarios, compras ni códigos de entradas.
+        with conexion() as con:
+            filas = con.execute("""
+                WITH compras_activas AS (
+                    SELECT c.idCompra, substr(c.fechaCompra, 1, 10) AS fecha,
+                           c.tipoEntrada, c.cantidad,
+                           CAST(ROUND(c.precioTotal * 100) AS INTEGER) AS importe,
+                           COUNT(e.idEntrada) AS unidades
+                    FROM compras c
+                    JOIN entradas e ON e.idCompra = c.idCompra
+                    WHERE e.estado <> 'cancelada'
+                    GROUP BY c.idCompra
+                )
+                SELECT fecha, tipoEntrada, SUM(unidades) AS entradasVendidas,
+                       COUNT(*) AS numeroVentas,
+                       SUM(CAST(ROUND(importe * unidades * 1.0 / cantidad) AS INTEGER))
+                           AS ingresosCentimos
+                FROM compras_activas
+                GROUP BY fecha, tipoEntrada
+                ORDER BY fecha, tipoEntrada
+            """).fetchall()
+        return [dict(fila) for fila in filas]
 
     @app.get("/api/entradas/usuarios/{idUsuario}", response_model=list[EntradaUsuario])
     def entradas_usuario(idUsuario: int, authorization: str | None = Header(default=None)):

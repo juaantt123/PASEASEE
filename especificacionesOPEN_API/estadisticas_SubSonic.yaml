@@ -9,8 +9,8 @@ info:
 
     Estadísticas consulta Usuarios, Entradas, Merchandising, Espacios
     y Escaleta mediante sus endpoints existentes. Front-end consulta
-    aquí las recomendaciones de usuario. Los datos históricos de cobro
-    y las preferencias musicales no están completamente expuestos.
+    aquí las recomendaciones de usuario. El cálculo de ingresos usa las compras
+    de entradas y merchandising. No hay datos de cobros adicionales ni preferencias musicales completas.
   version: 1.0.0
 
 servers:
@@ -35,9 +35,8 @@ paths:
       operationId: estadisticas_get_estadisticas_resumen
       description: >
         Agrega consultas síncronas a usuarios GET /usuarios (operationId: usuarios_get_usuarios),
-        escalet GET /escaleta (operationId: escalet_get_escaleta) y espacios GET /espacios
-        (operationId: espacios_get_espacios). Las ventas e ingresos requieren además los datos de
-        compras indicados en los otros endpoints estadísticos.
+        Escaleta y Espacios. Para ventas e ingresos consulta el agregado de Entradas
+        GET /entradas/ventas/resumen y las compras de Merchandising.
 
         Devuelve un resumen con los principales datos estadísticos
         del festival, como usuarios registrados, entradas vendidas,
@@ -71,10 +70,8 @@ paths:
       summary: Obtener estadísticas de entradas
       operationId: estadisticas_get_estadisticas_entradas
       description: >
-        Consulta síncrona a usuarios GET /usuarios (operationId: usuarios_get_usuarios) y, para cada
-        idUsuario, a entradas GET /entradas/usuarios/{idUsuario} (operationId:
-        entradas_get_entradas_usuarios_idUsuario). EntradaUsuario aporta fechaCompra, tipoEntrada y
-        estado; el ingreso histórico necesita el precio de la compra, que esta lista no expone.
+        Consulta GET /entradas/ventas/resumen para obtener totales por fecha y tipo
+        con sus importes históricos, y GET /entradas para conocer el stock total.
 
         Devuelve información estadística sobre las entradas
         vendidas para el festival.
@@ -133,12 +130,9 @@ paths:
       summary: Obtener estadísticas de ingresos
       operationId: estadisticas_get_estadisticas_ingresos
       description: >
-        Consulta síncrona a usuarios GET /usuarios (operationId: usuarios_get_usuarios), entradas
-        GET /entradas/usuarios/{idUsuario} (operationId: entradas_get_entradas_usuarios_idUsuario) y
-        merchandising GET /merchandising/usuarios/{idUsuario}/compras (operationId:
-        merchandising_get_merchandising_usuarios_idUsuario_compras). CompraMerchandising.precioTotal
-        permite sumar merchandising. El ingreso histórico de entradas y de servicios requiere
-        fuentes de datos adicionales que estos contratos no exponen.
+        Suma los importes históricos de GET /entradas/ventas/resumen y de las compras
+        no canceladas de GET /merchandising/usuarios/{idUsuario}/compras.
+        GET /usuarios proporciona los identificadores para consultar Merchandising.
 
         Devuelve los ingresos obtenidos por las distintas
         actividades y servicios de Subsonic Festival.
@@ -341,11 +335,9 @@ paths:
       summary: Obtener ventas agrupadas por día
       operationId: estadisticas_get_estadisticas_ventas_por_dia
       description: >
-        Consulta síncrona a usuarios GET /usuarios (operationId: usuarios_get_usuarios), entradas
-        GET /entradas/usuarios/{idUsuario} (operationId: entradas_get_entradas_usuarios_idUsuario) y
-        merchandising GET /merchandising/usuarios/{idUsuario}/compras (operationId:
-        merchandising_get_merchandising_usuarios_idUsuario_compras). Agrupa por fechaCompra. Los
-        importes históricos de entradas requieren datos de compra adicionales.
+        Agrupa por fecha de compra los totales de GET /entradas/ventas/resumen y
+        las compras no canceladas de GET /merchandising/usuarios/{idUsuario}/compras.
+        Una compra cuenta como una venta, aunque incluya varias unidades.
 
         Devuelve el número de ventas y los ingresos obtenidos
         durante cada día del periodo indicado.
@@ -663,7 +655,7 @@ components:
           example: 808430.50
 
         ingresosEntradas:
-          description: Importe histórico de entradas en euros; requiere precios de compra.
+          description: Importe histórico de entradas no canceladas, en euros.
           type: number
           format: double
           example: 710000.00
