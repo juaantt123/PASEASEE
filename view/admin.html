@@ -168,21 +168,22 @@
                                     <div>
                                         <label>Tipo</label>
                                         <select id="esp-tipo">
-                                            <option value="Escenario">Escenario</option><option value="Zona VIP">Zona VIP</option>
-                                            <option value="Baños">Baños</option><option value="Barras">Barras / Comida</option>
-                                            <option value="Emergencias">Punto de Emergencia</option>
+                                            <option value="escenario">Escenario</option><option value="restauracion">Restauración</option>
+                                            <option value="descanso">Descanso</option><option value="servicios">Servicios</option>
+                                            <option value="merchandising">Merchandising</option><option value="comida">Comida</option>
+                                            <option value="tienda_ropa">Tienda de ropa</option><option value="tatuador">Tatuador</option><option value="otros">Otros</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label>Estado</label>
                                         <select id="esp-estado">
-                                            <option value="Abierto">Abierto</option><option value="Mantenimiento">En mantenimiento</option>
-                                            <option value="Cerrado">Cerrado</option>
+                                            <option value="activo">Activo</option><option value="libre">Libre</option><option value="ocupado">Ocupado</option>
+                                            <option value="mantenimiento">En mantenimiento</option><option value="cerrado">Cerrado</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="form-row"><label>Ubicación</label><input type="text" id="esp-ubicacion" required></div>
-                                <div class="form-row"><label>Capacidad Máxima</label><input type="number" id="esp-capacidad" min="0" required></div>
+                                <div class="form-row"><label>Capacidad Máxima</label><input type="number" id="esp-capacidad" min="1" required></div>
                                 <div class="button-group">
                                     <button type="submit" class="submit-btn" id="btn-esp-submit">Registrar Espacio</button>
                                     <button type="button" class="cancel-btn" id="btn-esp-cancel" onclick="cancelarEdicion('espacio')">Cancelar</button>

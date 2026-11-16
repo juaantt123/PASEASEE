@@ -314,10 +314,12 @@ document.getElementById('form-artista').addEventListener('submit', async e => {
 document.getElementById('form-espacio').addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('esp-id').value;
+    const existente = cache.espacios.find(espacio => String(espacio.id) === id);
     const datos = {
         nombre: document.getElementById('esp-nombre').value, tipo: document.getElementById('esp-tipo').value,
         ubicacion: document.getElementById('esp-ubicacion').value, capacidad: parseInt(document.getElementById('esp-capacidad').value),
-        estado: document.getElementById('esp-estado').value
+        estado: document.getElementById('esp-estado').value,
+        ...(existente ? { tamano: existente.tamano, descripcion: existente.descripcion } : {})
     };
     enviarFormulario(`${API_ESPACIOS}/espacios`, id, datos, cargarEspacios, () => cancelarEdicion('espacio'));
 });
