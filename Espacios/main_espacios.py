@@ -79,29 +79,12 @@ class Error(BaseModel):
     mensaje: str
 
 
-# Datos provisionales, igual que en Usuarios y Entradas
-espacios = [
-    Espacio(
-        id=1,
-        nombre="Escenario Principal",
-        tipo="escenario",
-        ubicacion="Zona Norte",
-        capacidad=15000,
-        tamano=1200,
-        descripcion="Escenario principal destinado a los conciertos de mayor afluencia.",
-        estado="activo"
-    ),
-    Espacio(
-        id=2,
-        nombre="Zona de Restauración",
-        tipo="restauracion",
-        ubicacion="Zona Central",
-        capacidad=2500,
-        tamano=350,
-        descripcion="Área de puestos de comida y bebida.",
-        estado="activo"
-    )
-]
+try:
+    from . import persistencia_espacios as persistencia
+except ImportError:
+    import persistencia_espacios as persistencia
+
+persistencia.inicializar(Espacio)
 
 # URL base del servicio Escaleta. Debe incluir el prefijo /api.
 ESCALETA_URL = os.getenv("ESCALETA_URL", "http://localhost:8002/api").rstrip("/")
@@ -109,10 +92,10 @@ TIMEOUT_ESCALETA = float(os.getenv("ESCALETA_TIMEOUT", "3"))
 
 
 def buscar_espacio(idEspacio: int):
-    for espacio in espacios:
-        if espacio.id == idEspacio:
-            return espacio
-    raise HTTPException(status_code=404, detail="Espacio no encontrado")
+    espacio = persistencia.obtener(idEspacio, Espacio)
+    if espacio is None:
+        raise HTTPException(status_code=404, detail="Espacio no encontrado")
+    return espacio
 
 
 def llamada_escaleta(ruta: str, parametros: dict | None = None):
@@ -163,18 +146,13 @@ def listar_espacios(
     tipo: TipoEspacio | None = None,
     estado: EstadoEspacio | None = None
 ):
-    resultado = espacios
-    if tipo is not None:
-        resultado = [e for e in resultado if e.tipo == tipo]
-    if estado is not None:
-        resultado = [e for e in resultado if e.estado == estado]
-    return resultado
+    return persistencia.listar(Espacio, tipo, estado)
 
 
 # GET /api/espacios/activos
 @app.get("/api/espacios/activos", response_model=list[Espacio])
 def espacios_activos():
-    return [e for e in espacios if e.estado in {"activo", "libre"}]
+    return [e for e in persistencia.listar(Espacio) if e.estado in {"activo", "libre"}]
 
 
 # GET /api/espacios/disponibilidad
@@ -199,7 +177,7 @@ def consultar_disponibilidad(
         raise HTTPException(status_code=503, detail="Respuesta no válida de Escaleta")
 
     resultado = []
-    candidatos = [e for e in espacios if e.estado in {"activo", "libre"}]
+    candidatos = [e for e in persistencia.listar(Espacio) if e.estado in {"activo", "libre"}]
     if tipo is not None:
         candidatos = [e for e in candidatos if e.tipo == tipo]
 
@@ -243,18 +221,15 @@ def consultar_disponibilidad(
 # GET /api/espacios/tipo/{tipo}
 @app.get("/api/espacios/tipo/{tipo}", response_model=list[Espacio])
 def espacios_por_tipo(tipo: TipoEspacio):
-    return [e for e in espacios if e.tipo == tipo]
+    return persistencia.listar(Espacio, tipo=tipo)
 
 
 # POST /api/espacios
 @app.post("/api/espacios", response_model=Espacio, status_code=201)
 def crear_espacio(datos: EspacioInput):
-    if any(e.nombre.casefold() == datos.nombre.casefold() for e in espacios):
+    if any(e.nombre.casefold() == datos.nombre.casefold() for e in persistencia.listar(Espacio)):
         raise HTTPException(status_code=409, detail="Ya existe un espacio con ese nombre")
-    nuevo_id = max((e.id for e in espacios), default=0) + 1
-    nuevo = Espacio(id=nuevo_id, **datos.model_dump())
-    espacios.append(nuevo)
-    return nuevo
+    return persistencia.crear(datos, Espacio)
 
 
 # GET /api/espacios/{idEspacio}
@@ -267,11 +242,9 @@ def obtener_espacio(idEspacio: int):
 @app.put("/api/espacios/{idEspacio}", response_model=Espacio)
 def modificar_espacio(idEspacio: int, datos: EspacioInput):
     espacio = buscar_espacio(idEspacio)
-    if any(e.id != idEspacio and e.nombre.casefold() == datos.nombre.casefold() for e in espacios):
+    if any(e.id != idEspacio and e.nombre.casefold() == datos.nombre.casefold() for e in persistencia.listar(Espacio)):
         raise HTTPException(status_code=409, detail="Ya existe un espacio con ese nombre")
-    for campo, valor in datos.model_dump().items():
-        setattr(espacio, campo, valor)
-    return espacio
+    return persistencia.actualizar(idEspacio, datos, Espacio)
 
 
 # DELETE /api/espacios/{idEspacio}
@@ -286,7 +259,7 @@ def eliminar_espacio(idEspacio: int):
             status_code=409,
             detail="El espacio no se puede eliminar porque tiene actuaciones asociadas"
         )
-    espacios.remove(espacio)
+    persistencia.eliminar(idEspacio)
     return None
 
 
@@ -294,16 +267,14 @@ def eliminar_espacio(idEspacio: int):
 @app.patch("/api/espacios/{idEspacio}/estado", response_model=Espacio)
 def actualizar_estado(idEspacio: int, datos: ActualizacionEstado):
     espacio = buscar_espacio(idEspacio)
-    espacio.estado = datos.estado
-    return espacio
+    return persistencia.actualizar_campo(idEspacio, "estado", datos.estado, Espacio)
 
 
 # PATCH /api/espacios/{idEspacio}/capacidad
 @app.patch("/api/espacios/{idEspacio}/capacidad", response_model=Espacio)
 def actualizar_capacidad(idEspacio: int, datos: ActualizacionCapacidad):
     espacio = buscar_espacio(idEspacio)
-    espacio.capacidad = datos.capacidad
-    return espacio
+    return persistencia.actualizar_campo(idEspacio, "capacidad", datos.capacidad, Espacio)
 
 
 # GET /api/espacios/{idEspacio}/actuaciones
