@@ -1,143 +1,93 @@
-const productosTienda = {
-    camiseta: { nombre: 'Camiseta oficial', precio: 25 },
-    sudadera: { nombre: 'Sudadera del festival', precio: 55 },
-    poster: { nombre: 'Póster edición 2026', precio: 12 },
-    kit: { nombre: 'Kit de festival', precio: 18 },
-    bolsa: { nombre: 'Bolsa tote', precio: 15 },
-    gorra: { nombre: 'Gorra Subsonic', precio: 20 },
-    botella: { nombre: 'Botella reutilizable', precio: 18 },
-    gafas: { nombre: 'Gafas festivaleras', precio: 10 },
-    pulsera: { nombre: 'Pulsera conmemorativa', precio: 5 },
-    rinonera: { nombre: 'Riñonera festival', precio: 28 },
-    tapones: { nombre: 'Tapones para conciertos', precio: 8 },
-    abanico: { nombre: 'Abanico Subsonic', precio: 12 }
-};
+const API_USUARIOS_TIENDA = 'http://127.0.0.1:8001/api/usuarios';
 
-const API_BASES_USUARIOS_TIENDA = [
-    window.SUBSONIC_API_URL,
-    'http://localhost:8000/api/usuarios',
-    'http://127.0.0.1:8081/api/usuarios',
-    'http://127.0.0.1:8001/api/usuarios'
-].filter(Boolean);
+async function solicitarTienda(url, opciones = {}) {
+    let respuesta;
+    try {
+        respuesta = await fetch(url, opciones);
+    } catch {
+        throw new Error('No se pudo conectar con el servicio. Comprueba que esté iniciado.');
+    }
+    let datos;
+    try { datos = await respuesta.json(); }
+    catch { throw new Error('El servicio devolvió una respuesta no válida.'); }
+    if (!respuesta.ok) throw new Error(datos.mensaje || datos.detail || `Error ${respuesta.status}`);
+    return datos;
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-    const productId = new URLSearchParams(window.location.search).get('producto');
-    const product = productosTienda[productId];
+document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('product-checkout-form');
-    const message = document.getElementById('product-checkout-message');
-
-    if (!product) {
-        window.location.replace('tienda.html');
+    const mensaje = document.getElementById('product-checkout-message');
+    const boton = document.getElementById('product-submit');
+    const cantidad = document.getElementById('product-quantity');
+    const talla = document.getElementById('product-size');
+    const metodos = document.getElementById('payment-method');
+    const id = Number(new URLSearchParams(location.search).get('producto'));
+    let sesion;
+    try { sesion = JSON.parse(sessionStorage.getItem('subsonic-sesion') || 'null'); }
+    catch { sesion = null; }
+    if (!Number.isInteger(id) || id < 1) {
+        mensaje.textContent = 'Selecciona un producto desde la tienda.';
         return;
     }
-
-    const productName = document.getElementById('product-name');
-    const quantityInput = document.getElementById('product-quantity');
-    const summaryProduct = document.getElementById('summary-product');
-    const summaryUnitPrice = document.getElementById('summary-unit-price');
-    const summaryQuantity = document.getElementById('summary-product-quantity');
-    const summaryTotal = document.getElementById('summary-product-total');
-    const formatPrice = (price) => `${price.toLocaleString('es-ES')} €`;
-
-    productName.value = product.nombre;
-    summaryProduct.textContent = product.nombre;
-    summaryUnitPrice.textContent = formatPrice(product.precio);
-
-    const updateSummary = () => {
-        const quantity = Number(quantityInput.value) || 0;
-        summaryQuantity.textContent = String(quantity);
-        summaryTotal.textContent = formatPrice(quantity * product.precio);
+    if (!sesion?.usuario?.id || !sesion?.token) {
+        mensaje.textContent = 'Inicia sesión desde Perfil para realizar el pedido.';
+        return;
+    }
+    let producto;
+    let metodosDisponibles;
+    try {
+        const usuario = await solicitarTienda(`${API_USUARIOS_TIENDA}/sesion`, {
+            headers: { Authorization: `Bearer ${sesion.token}` }
+        });
+        if (usuario.id !== sesion.usuario.id) throw new Error('La sesión no corresponde a la cuenta seleccionada.');
+        [producto, metodosDisponibles] = await Promise.all([
+            solicitarTienda(`${API_TIENDA}/merchandising/${id}`),
+            solicitarTienda(`${API_USUARIOS_TIENDA}/${usuario.id}/metodos-pago`)
+        ]);
+    } catch (error) {
+        mensaje.textContent = error.message;
+        return;
+    }
+    document.getElementById('product-name').value = producto.nombre;
+    document.getElementById('summary-product').textContent = producto.nombre;
+    const precio = n => `${Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2 })} €`;
+    document.getElementById('summary-unit-price').textContent = precio(producto.precio);
+    const necesitaTalla = ['camiseta', 'sudadera'].includes(producto.categoria);
+    document.getElementById('talla-grupo').hidden = !necesitaTalla;
+    talla.required = necesitaTalla;
+    metodos.replaceChildren(new Option('Selecciona un método', ''));
+    for (const metodo of metodosDisponibles) {
+        const etiqueta = metodo.tipo === 'tarjeta' ? `Tarjeta terminada en ${metodo.ultimosDigitos || '????'}` : 'PayPal';
+        metodos.add(new Option(etiqueta, String(metodo.id)));
+    }
+    if (!metodosDisponibles.length) mensaje.textContent = 'No tienes métodos de pago de prueba. Añade uno mediante la API de Usuarios.';
+    if (!producto.disponible || producto.stock <= 0) mensaje.textContent = 'Este producto está agotado.';
+    boton.disabled = !metodosDisponibles.length || !producto.disponible || producto.stock <= 0;
+    const actualizarResumen = () => {
+        document.getElementById('summary-product-quantity').textContent = cantidad.value;
+        document.getElementById('summary-product-total').textContent = precio(Number(cantidad.value) * producto.precio);
     };
-
-    quantityInput.addEventListener('input', updateSummary);
-    updateSummary();
-
-    form.addEventListener('submit', async (event) => {
+    cantidad.addEventListener('input', actualizarResumen);
+    actualizarResumen();
+    form.addEventListener('submit', async event => {
         event.preventDefault();
-        message.textContent = '';
-        message.classList.remove('is-success');
-
-        if (!form.reportValidity()) {
-            return;
-        }
-
-        const quantity = Number(quantityInput.value);
-        if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
-            quantityInput.setCustomValidity('Selecciona entre 1 y 10 unidades.');
-            quantityInput.reportValidity();
-            quantityInput.setCustomValidity('');
-            return;
-        }
-
-        const session = readShopSession();
-        if (!session?.usuario?.id || !session?.token) {
-            message.textContent = 'Inicia sesión en tu perfil y añade saldo demostrativo antes de realizar el pedido.';
-            return;
-        }
-
+        if (!form.reportValidity()) return;
+        mensaje.textContent = '';
+        mensaje.classList.remove('is-success');
+        boton.disabled = true;
         try {
-            const importe = product.precio * quantity;
-            const result = await spendDemoBalance(session, importe, product.nombre);
-            message.textContent = `Pedido demo preparado. Se descontaron ${formatPrice(importe)}; saldo disponible: ${formatPrice(result.saldo)}.`;
-            message.classList.add('is-success');
-            form.reset();
-            productName.value = product.nombre;
-            updateSummary();
+            const compra = await solicitarTienda(`${API_TIENDA}/merchandising/compras`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idUsuario: sesion.usuario.id, idProducto: id, cantidad: Number(cantidad.value), talla: necesitaTalla ? talla.value : null, idMetodoPago: Number(metodos.value) })
+            });
+            mensaje.textContent = `Pedido registrado. Referencia ${compra.idCompra}; total ${precio(compra.precioTotal)}. No se ha realizado ningún cobro.`;
+            mensaje.classList.add('is-success');
+            // Evita duplicar la compra si se vuelve a pulsar el botón.
+            boton.textContent = 'Pedido registrado';
         } catch (error) {
-            message.textContent = error.message;
+            mensaje.textContent = error.message;
+            boton.disabled = false;
         }
     });
 });
-
-function readShopSession() {
-    try {
-        const storedSession = sessionStorage.getItem('subsonic-sesion');
-        return storedSession ? JSON.parse(storedSession) : null;
-    } catch {
-        return null;
-    }
-}
-
-function formatPrice(price) {
-    return `${price.toLocaleString('es-ES')} €`;
-}
-
-async function spendDemoBalance(session, amount, productName) {
-    let lastError;
-    for (const baseUrl of API_BASES_USUARIOS_TIENDA) {
-        let response;
-        try {
-            response = await fetch(`${baseUrl}/${session.usuario.id}/saldo/gastar`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: 'Bearer ' + session.token
-                },
-                body: JSON.stringify({
-                    importe: amount,
-                    concepto: `Compra demo: ${productName}`
-                })
-            });
-        } catch {
-            continue;
-        }
-
-        let result;
-        try {
-            result = await response.json();
-        } catch {
-            lastError = new Error('El servicio de saldo devolvió una respuesta no válida.');
-            continue;
-        }
-
-        if (response.status === 404 || response.status === 405) {
-            continue;
-        }
-        if (!response.ok) {
-            throw new Error(result.mensaje || 'No se pudo completar el pedido.');
-        }
-        return result;
-    }
-
-    throw lastError || new Error('No se pudo conectar con el monedero demo. Comprueba que el servicio de usuarios esté iniciado.');
-}

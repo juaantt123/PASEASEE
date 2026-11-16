@@ -50,23 +50,16 @@
                         <input id="product-quantity" type="number" min="1" max="10" value="1" required>
                         <small>Puedes pedir de 1 a 10 unidades.</small>
                     </div>
-                    <fieldset class="checkout-fieldset">
-                        <legend>Datos de contacto y envío</legend>
-                        <div class="checkout-field">
-                            <label for="customer-name">Nombre y apellidos *</label>
-                            <input id="customer-name" type="text" autocomplete="name" minlength="3" maxlength="100" pattern=".*\s+.*" title="Escribe tu nombre y al menos un apellido." required>
-                        </div>
-                        <div class="checkout-field">
-                            <label for="customer-email">Correo electrónico *</label>
-                            <input id="customer-email" type="email" autocomplete="email" maxlength="254" required>
-                        </div>
-                        <div class="checkout-field">
-                            <label for="shipping-address">Dirección de envío *</label>
-                            <input id="shipping-address" type="text" autocomplete="street-address" maxlength="200" required>
-                        </div>
-                    </fieldset>
-                    <p class="checkout-note">El pedido se descontará del saldo demostrativo de tu cuenta. <a href="perfil.html">Inicia sesión y añade saldo demo</a>. No se realiza ningún cobro con dinero real.</p>
-                    <button class="btn btn-primary checkout-submit" type="submit">Preparar pedido (demo)</button>
+                    <div class="checkout-field" id="talla-grupo" hidden>
+                        <label for="product-size">Talla *</label>
+                        <select id="product-size"><option value="">Selecciona una talla</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+                    </div>
+                    <div class="checkout-field">
+                        <label for="payment-method">Método de pago de prueba *</label>
+                        <select id="payment-method" required><option value="">Cargando métodos…</option></select>
+                    </div>
+                    <p class="checkout-note">Inicia sesión y selecciona un método de pago de prueba de tu cuenta. No se realiza ningún cobro ni se descuenta el saldo del monedero. Si no tienes un método, puedes registrarlo mediante la API de Usuarios.</p>
+                    <button class="btn btn-primary checkout-submit" id="product-submit" type="submit" disabled>Registrar pedido (demo)</button>
                     <p id="product-checkout-message" class="checkout-message" role="status" aria-live="polite"></p>
                 </form>
 
