@@ -3,6 +3,8 @@ from fastapi import Header, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 import httpx
+import hmac
+import os
 try:
     from .persistencia import conexion, inicializar
 except ImportError:
@@ -62,6 +64,22 @@ def configurar(app, modelos, consultar_usuarios, url_usuarios):
     def por_tipo(nombre_tipo: TipoNombre):
         with conexion() as con:
             return buscar(con, "tipos", "nombre", nombre_tipo, "Tipo de entrada no encontrado")
+
+    @app.get('/api/entradas/compras/resumen', tags=['Estadísticas'])
+    def resumen_compras(x_clave_interna: str | None = Header(default=None)):
+        clave = os.getenv('CLAVE_INTERNA_ESTADISTICAS', '')
+        if not clave:
+            raise HTTPException(503, 'Clave interna de estadisticas no configurada')
+        if not x_clave_interna or not hmac.compare_digest(x_clave_interna, clave):
+            raise HTTPException(403, 'Acceso interno no autorizado')
+        with conexion() as con:
+            filas = con.execute("""
+                SELECT c.idCompra, c.tipoEntrada, c.cantidad, c.precioTotal, c.fechaCompra,
+                       SUM(CASE WHEN e.estado != 'cancelada' THEN 1 ELSE 0 END) AS cantidadActiva
+                FROM compras c JOIN entradas e ON e.idCompra = c.idCompra
+                GROUP BY c.idCompra ORDER BY c.idCompra
+            """).fetchall()
+            return [dict(fila) for fila in filas]
 
     @app.post("/api/entradas/comprar", response_model=CompraEntrada, status_code=201)
     def comprar(datos: CompraEntradaInput):
