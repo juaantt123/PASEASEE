@@ -124,20 +124,32 @@
                     <div class="content-grid">
                         <div class="card">
                             <form id="form-artista">
-                                <p id="art-mensaje" role="status" aria-live="polite"></p>
                                 <input type="hidden" id="art-id">
                                 <input type="hidden" id="act-id">
-                                <div class="form-row"><label for="art-existente">Artista existente</label><select id="art-existente"><option value="">Nuevo artista</option></select></div>
-                                <div class="form-row"><label for="art-nombre">Nombre del artista</label><input type="text" id="art-nombre" required></div>
-                                <div class="form-row"><label for="art-genero">Género musical</label><input type="text" id="art-genero" required></div>
-                                <div class="form-row grid-2">
-                                    <div><label for="art-fecha">Fecha</label><input type="date" id="art-fecha" required></div>
-                                    <div><label for="art-escenario">Escenario activo</label><select id="art-escenario" required><option value="">Cargando escenarios…</option></select></div>
+                                
+                                <div class="form-row">
+                                    <label>Modificar existente (Opcional)</label>
+                                    <select id="art-existente">
+                                        <option value="">-- Crear nuevo artista --</option>
+                                        <!-- Se rellena desde admin_2.js -->
+                                    </select>
                                 </div>
+
+                                <div class="form-row"><label>Nombre del artista</label><input type="text" id="art-nombre" required></div>
+                                <div class="form-row"><label>Género musical</label><input type="text" id="art-genero" required></div>
+                                
+                                <div class="form-row grid-2">
+                                    <div><label>Fecha (YYYY-MM-DD)</label><input type="date" id="art-fecha" required></div>
+                                    <div><label>Escenario</label><select id="art-escenario" required></select></div>
+                                </div>
+                                
                                 <div class="form-row grid-2">
                                     <div><label>Hora Inicio</label><input type="time" id="art-horaInicio" required></div>
                                     <div><label>Hora Fin</label><input type="time" id="art-horaFin" required></div>
                                 </div>
+                                
+                                <p id="art-mensaje" style="color: #ff4444; font-size: 0.9rem; margin-bottom: 1rem;"></p>
+
                                 <div class="button-group">
                                     <button type="submit" class="submit-btn" id="btn-art-submit">Guardar Artista</button>
                                     <button type="button" class="cancel-btn" id="btn-art-cancel" onclick="cancelarEdicion('artista')">Cancelar</button>
@@ -152,7 +164,7 @@
                         </div>
                     </div>
                 </section>
-
+                
                 <!-- ESPACIOS -->
                 <section id="espacios" class="admin-section">
                     <div class="section-header">
