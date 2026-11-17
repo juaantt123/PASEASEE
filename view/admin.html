@@ -99,11 +99,65 @@
 
             <main class="workspace">
                 
-                <!-- INICIO -->
+               <!-- INICIO -->
                 <section id="inicio" class="admin-section active">
                     <div class="section-header">
                         <h2>Resumen del Festival</h2>
                         <p>Visión general de la configuración de Subsonic 2026.</p>
+                    </div>
+
+                    <!-- Tarjetas de resumen global -->
+                    <div class="stats-grid">
+                        <div class="stats-card" style="background: #111;">
+                            <span>Artistas Confirmados</span>
+                            <strong id="kpi-artistas">--</strong>
+                        </div>
+                        <div class="stats-card" style="background: #111;">
+                            <span>Escenarios Activos</span>
+                            <strong id="kpi-escenarios">--</strong>
+                        </div>
+                        <div class="stats-card" style="background: #111;">
+                            <span>Tipos de Entradas</span>
+                            <strong id="kpi-entradas">--</strong>
+                        </div>
+                        <div class="stats-card" style="background: #111;">
+                            <span>Artículos de Tienda</span>
+                            <strong id="kpi-tienda">--</strong>
+                        </div>
+                    </div>
+
+                    <!-- Accesos directos y Estado -->
+                    <div class="stats-details" style="margin-top: 2rem;">
+                        <div class="card" style="padding: 2rem;">
+                            <h3 style="margin-top: 0; color: #c2ff00;">Accesos Rápidos</h3>
+                            <p style="color: #888; font-size: 0.9rem; margin-bottom: 1.5rem;">Atajos a las tareas más comunes de administración.</p>
+                            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                                <button class="action-btn" style="padding: 1rem; text-align: left; font-weight: bold;" onclick="cambiarPestana('artistas', document.querySelectorAll('.nav-btn')[2])">🎤 Añadir nuevo Artista o Actuación</button>
+                                <button class="action-btn" style="padding: 1rem; text-align: left; font-weight: bold;" onclick="cambiarPestana('entradas', document.querySelectorAll('.nav-btn')[4])">🎟️ Configurar nuevo pase de Entrada</button>
+                                <button class="action-btn" style="padding: 1rem; text-align: left; font-weight: bold;" onclick="cambiarPestana('tienda', document.querySelectorAll('.nav-btn')[5])">👕 Añadir producto al inventario</button>
+                            </div>
+                        </div>
+
+                        <div class="card" style="padding: 2rem;">
+                            <h3 style="margin-top: 0; color: #c2ff00;">Estado del Sistema</h3>
+                            <p style="color: #888; font-size: 0.9rem; margin-bottom: 1.5rem;">Monitorización de los microservicios en tiempo real.</p>
+                            <div class="stats-row">
+                                <span>API Entradas (Puerto 8000)</span>
+                                <strong id="status-entradas" style="color: #c2ff00;">Online</strong>
+                            </div>
+                            <div class="stats-row">
+                                <span>API Escaleta (Puerto 8002)</span>
+                                <strong id="status-escaleta" style="color: #c2ff00;">Online</strong>
+                            </div>
+                            <div class="stats-row">
+                                <span>API Espacios (Puerto 8003)</span>
+                                <strong id="status-espacios" style="color: #c2ff00;">Online</strong>
+                            </div>
+                            <div class="stats-row">
+                                <span>API Tienda (Puerto 8004)</span>
+                                <strong id="status-tienda" style="color: #c2ff00;">Online</strong>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -164,7 +218,7 @@
                         </div>
                     </div>
                 </section>
-                
+
                 <!-- ESPACIOS -->
                 <section id="espacios" class="admin-section">
                     <div class="section-header">
@@ -279,7 +333,7 @@
         </div>
     </div>
 
-    <script src="admin.js"></script>
+    <script src="admin.js?v=2"></script>
     <script src="estadisticas.js"></script>
 </body>
 </html>

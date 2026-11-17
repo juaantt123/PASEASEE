@@ -63,6 +63,7 @@ async function cargarArtistas() {
                 </td>
             </tr>`).join('');
         }).join('') || `<tr><td colspan="4" style="text-align: center;">No hay artistas registrados.</td></tr>`;
+        //actualizarPanelInicio();
     } catch (e) { tbody.innerHTML = `<tr><td colspan="4" style="color: #ff4444;">Error conectando con API Escaleta (8002)</td></tr>`; }
 }
 
@@ -94,6 +95,7 @@ async function cargarEspacios() {
                 </td>
             </tr>
         `).join('') || `<tr><td colspan="5" style="text-align: center;">No hay espacios configurados.</td></tr>`;
+        //actualizarPanelInicio();
     } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color: #ff4444;">Error conectando con API Espacios (8003)</td></tr>`; }
 }
 
@@ -114,6 +116,7 @@ async function cargarEntradas() {
                 </td>
             </tr>
         `).join('') || `<tr><td colspan="5" style="text-align: center;">No hay pases configurados.</td></tr>`;
+        //actualizarPanelInicio();
     } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color: #ff4444;">Error conectando con API Entradas (8000)</td></tr>`; }
 }
 
@@ -134,11 +137,16 @@ async function cargarTienda() {
                 </td>
             </tr>
         `).join('') || `<tr><td colspan="5" style="text-align: center;">No hay productos.</td></tr>`;
+       //actualizarPanelInicio();
     } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color: #ff4444;">Error conectando con API Tienda (8004)</td></tr>`; }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    cargarArtistas(); cargarEspacios(); cargarEntradas(); cargarTienda();
+document.addEventListener('DOMContentLoaded', async () => {
+    await cargarArtistas();
+    await cargarEspacios();
+    await cargarEntradas();
+    await cargarTienda();
+    actualizarPanelInicio();
 });
 
 // ==========================================
@@ -339,3 +347,25 @@ document.getElementById('form-producto').addEventListener('submit', (e) => {
     };
     enviarFormulario(`${API_TIENDA}/merchandising`, id, datos, cargarTienda, () => cancelarEdicion('producto'));
 });
+
+// ===============================
+// ACTUALIZAR PANEL DE INICIO
+// ===============================
+function actualizarPanelInicio() {
+    try {
+        if (!document.getElementById('kpi-artistas')) return; // Evita errores si no ha cargado el HTML
+        
+        document.getElementById('kpi-artistas').textContent = cache.artistas ? cache.artistas.length : 0;
+        document.getElementById('kpi-entradas').textContent = cache.entradas ? cache.entradas.length : 0;
+        document.getElementById('kpi-tienda').textContent = cache.tienda ? cache.tienda.length : 0;
+        
+        if (cache.espacios) {
+            const escenarios = cache.espacios.filter(e => e.tipo && e.tipo.toLowerCase() === 'escenario').length;
+            document.getElementById('kpi-escenarios').textContent = escenarios;
+        } else {
+            document.getElementById('kpi-escenarios').textContent = 0;
+        }
+    } catch (error) {
+        console.error("Error al actualizar KPIs:", error);
+    }
+}
