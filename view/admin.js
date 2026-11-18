@@ -11,6 +11,44 @@ const API_ENTRADAS = 'http://127.0.0.1:8000/api';
 const API_ESCALETA = 'http://127.0.0.1:8002/api';
 const API_ESPACIOS = 'http://127.0.0.1:8003/api';
 const API_TIENDA = 'http://127.0.0.1:8004/api';
+const API_USUARIOS_ADMIN = 'http://127.0.0.1:8001/api';
+
+async function cargarUsuariosProveedor() {
+    const estado = document.getElementById('usuarios-proveedor-status');
+    const lista = document.getElementById('usuarios-proveedor-lista');
+    lista.replaceChildren(); estado.textContent = 'Cargando cuentas...';
+    try {
+        const respuesta = await fetch(`${API_USUARIOS_ADMIN}/usuarios`, { headers: cabecerasAdmin() });
+        if (!respuesta.ok) throw new Error('No se pudieron consultar los usuarios');
+        const usuarios = await respuesta.json();
+        estado.textContent = usuarios.length ? '' : 'No hay usuarios registrados.';
+        for (const usuario of usuarios) {
+            const fila = document.createElement('tr');
+            for (const texto of [`${usuario.nombre} ${usuario.apellidos}`, usuario.email, usuario.tipo]) {
+                const celda = document.createElement('td'); celda.textContent = texto; fila.append(celda);
+            }
+            const acciones = document.createElement('td');
+            if (usuario.tipo !== 'administrador') {
+                const boton = document.createElement('button'); boton.className = 'action-btn'; boton.type = 'button';
+                const nuevoRol = usuario.tipo === 'proveedor' ? 'cliente' : 'proveedor';
+                boton.textContent = nuevoRol === 'proveedor' ? 'Asignar proveedor' : 'Quitar rol';
+                boton.addEventListener('click', async () => {
+                    if (!confirm(`¿Cambiar el rol de ${usuario.email} a ${nuevoRol}?`)) return;
+                    try {
+                        const cambio = await fetch(`${API_USUARIOS_ADMIN}/usuarios/${usuario.id}/tipo`, {
+                            method: 'PATCH', headers: cabecerasAdmin({'Content-Type': 'application/json'}),
+                            body: JSON.stringify({tipo: nuevoRol})
+                        });
+                        if (!cambio.ok) { const error = await cambio.json(); throw new Error(error.mensaje || 'No se pudo cambiar el rol'); }
+                        await cargarUsuariosProveedor();
+                    } catch (error) { estado.textContent = error.message; }
+                });
+                acciones.append(boton);
+            }
+            fila.append(acciones); lista.append(fila);
+        }
+    } catch (error) { estado.textContent = error.message; }
+}
 
 let cache = { artistas: [], actuaciones: [], espacios: [], entradas: [], tienda: [] };
 

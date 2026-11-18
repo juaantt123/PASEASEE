@@ -45,3 +45,9 @@ Los archivos SQLite se crean en las carpetas `data` de cada servicio y no se sub
 ```
 
 Las pruebas de integración arrancan sus servicios con bases temporales y un administrador de pruebas. El saldo y las compras son demostrativos; no se realizan cobros reales.
+
+## Proveedores
+
+Un proveedor crea primero una cuenta normal en Perfil. Un administrador inicia sesión, abre **Proveedores** en el panel y asigna el rol a esa cuenta. El proveedor entra desde Perfil con su propio correo y contraseña; se abrirá su área de productos. Puede crear, editar y eliminar sus productos; no puede modificar productos de otros proveedores. Los productos existentes sin proveedor siguen administrados desde el panel. No se pueden eliminar productos con compras asociadas.
+
+Las rutas protegidas de Merchandising son `/api/merchandising/proveedor/productos` (GET, POST) y `/api/merchandising/proveedor/productos/{idProducto}` (PUT, DELETE). Requieren una sesión de proveedor válida. La actualización de una base existente añade automáticamente la columna de propietario sin borrar los productos.

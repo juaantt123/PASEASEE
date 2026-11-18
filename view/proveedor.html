@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Área de proveedor | Subsonic</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="navbar">
+    <a class="logo" href="index.html">SUBSONIC<span>FEST</span></a>
+    <nav aria-label="Navegación principal"><ul class="nav-links">
+      <li><a href="index.html">Inicio</a></li><li><a href="perfil.html">Mi perfil</a></li>
+    </ul></nav>
+  </header>
+  <main class="tickets-page">
+    <section class="tickets-hero">
+      <a class="back-link" href="index.html">&larr; Volver al inicio</a>
+      <span class="badge">SUBSONIC · PROVEEDORES</span>
+      <h1>Área de <span class="gradient-text">proveedor</span></h1>
+      <p id="provider-status" role="status">Comprobando tu sesión...</p>
+    </section>
+    <section class="account-section" id="provider-content" hidden>
+      <div class="account-heading"><span class="eyebrow">TU CUENTA</span><h2>Bienvenido, <span id="provider-name"></span></h2></div>
+      <p id="provider-email"></p>
+      <p><a href="perfil.html">Gestionar mis datos</a></p>
+      <button class="btn btn-primary" id="provider-logout" type="button">Cerrar sesión</button>
+      <div class="account-heading"><span class="eyebrow">MI INVENTARIO</span><h2>Mis productos</h2></div>
+      <form id="provider-form" class="account-form">
+        <input id="product-id" type="hidden">
+        <div class="checkout-field"><label for="product-name">Nombre *</label><input id="product-name" required maxlength="200"></div>
+        <div class="checkout-field"><label for="product-description">Descripción</label><input id="product-description" maxlength="500"></div>
+        <div class="checkout-field"><label for="product-category">Categoría *</label><select id="product-category"><option value="camiseta">Camiseta</option><option value="sudadera">Sudadera</option><option value="accesorio">Accesorio</option><option value="poster">Póster</option><option value="otros">Otros</option></select></div>
+        <div class="checkout-field"><label for="product-price">Precio (€) *</label><input id="product-price" type="number" min="0" step="0.01" required></div>
+        <div class="checkout-field"><label for="product-stock">Stock *</label><input id="product-stock" type="number" min="0" step="1" required></div>
+        <button class="btn btn-primary" type="submit">Guardar producto</button>
+        <button class="btn" id="product-cancel" type="button">Cancelar edición</button>
+      </form>
+      <p id="products-status" role="status"></p>
+      <div id="provider-products" class="cards-grid"></div>
+    </section>
+  </main>
+  <script src="proveedor.js"></script>
+</body>
+</html>

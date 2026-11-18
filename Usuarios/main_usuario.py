@@ -33,7 +33,7 @@ class RegistroUsuario(BaseModel):
     password: str = Field(min_length=8)
     telefono: str | None = None
     fechaNacimiento: date | None = None
-    tipo: Literal['cliente', 'proveedor']
+    tipo: Literal['cliente']
 
 class UsuarioInput(BaseModel):
     nombre: str

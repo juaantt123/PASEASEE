@@ -63,6 +63,9 @@ def inicializar():
             fechaCompra TEXT NOT NULL,
             estado TEXT NOT NULL
         )""")
+        columnas = {fila['name'] for fila in con.execute('PRAGMA table_info(productos)')}
+        if 'idProveedor' not in columnas:
+            con.execute('ALTER TABLE productos ADD COLUMN idProveedor INTEGER')
         con.execute("CREATE TABLE IF NOT EXISTS configuracion (clave TEXT PRIMARY KEY)")
         # Los productos iniciales se insertan una sola vez; si luego se borran
         # desde el panel, no vuelven a aparecer al reiniciar.

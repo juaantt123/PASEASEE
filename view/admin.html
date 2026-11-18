@@ -85,6 +85,7 @@
                 <button class="nav-btn" onclick="cambiarPestana('espacios', this)">🗺️ Espacios y Escenarios</button>
                 <button class="nav-btn" onclick="cambiarPestana('entradas', this)">🎟️ Configurar Entradas</button>
                 <button class="nav-btn" onclick="cambiarPestana('tienda', this)">👕 Inventario Tienda</button>
+                <button class="nav-btn" onclick="cambiarPestana('proveedores', this); cargarUsuariosProveedor()">👤 Proveedores</button>
             </nav>
             <div class="sidebar-footer">
                 <button class="logout-btn" onclick="cerrarSesionAdmin()">Cerrar Sesión</button>
@@ -161,6 +162,11 @@
                     </div>
                 </section>
 
+                <section id="proveedores" class="admin-section">
+                    <div class="section-header"><h2>Gestión de proveedores</h2><p>Asigna el rol de proveedor a una cuenta registrada.</p></div>
+                    <p id="usuarios-proveedor-status" role="status"></p>
+                    <div class="table-container"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr></thead><tbody id="usuarios-proveedor-lista"></tbody></table></div>
+                </section>
                 <section id="estadisticas" class="admin-section">
                     <div class="section-header"><h2>Estadísticas del festival</h2><p>Consulta las ventas, los ingresos y el uso de espacios.</p></div>
                     <button type="button" class="action-btn" id="stats-refresh">Actualizar datos</button>

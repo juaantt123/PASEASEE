@@ -185,6 +185,67 @@ def exigir_admin(authorization: str | None = Header(default=None)):
         raise HTTPException(status_code=403, detail="Acceso exclusivo para administradores")
 
 
+def exigir_proveedor(authorization: str | None = Header(default=None)):
+    if not authorization or not authorization.startswith('Bearer '):
+        raise HTTPException(401, 'Inicia sesión como proveedor')
+    peticion = PeticionHTTP(f'{USUARIOS_URL}/usuarios/sesion', headers={'Authorization': authorization})
+    try:
+        with urlopen(peticion, timeout=TIMEOUT_USUARIOS) as respuesta:
+            usuario = json.loads(respuesta.read().decode('utf-8'))
+    except HTTPError as exc:
+        if exc.code in (401, 403):
+            raise HTTPException(401, 'La sesión no es válida') from exc
+        raise HTTPException(503, 'No se puede verificar la sesión') from exc
+    except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        raise HTTPException(503, 'No se puede verificar la sesión') from exc
+    if not isinstance(usuario, dict) or usuario.get('tipo') != 'proveedor':
+        raise HTTPException(403, 'Acceso exclusivo para proveedores')
+    if not isinstance(usuario.get('id'), int):
+        raise HTTPException(503, 'Respuesta de sesión no válida')
+    return usuario
+
+
+@app.get('/api/merchandising/proveedor/productos', response_model=list[Producto])
+def productos_proveedor(usuario: dict = Depends(exigir_proveedor)):
+    with persistencia.conexion() as con:
+        filas = con.execute('SELECT * FROM productos WHERE idProveedor=? ORDER BY id', (usuario['id'],)).fetchall()
+        return [persistencia._producto(fila) for fila in filas]
+
+
+@app.post('/api/merchandising/proveedor/productos', response_model=Producto, status_code=201)
+def crear_producto_proveedor(datos: ProductoInput, usuario: dict = Depends(exigir_proveedor)):
+    with persistencia.conexion(True) as con:
+        nombre = datos.nombre.strip().casefold()
+        if any(fila['nombre'].strip().casefold() == nombre for fila in con.execute(
+            'SELECT nombre FROM productos WHERE categoria=?', (datos.categoria,))):
+            raise HTTPException(409, 'Ya existe un producto con esos datos')
+        cur = con.execute('INSERT INTO productos(nombre,descripcion,categoria,precio,stock,imagen,idProveedor) VALUES (?,?,?,?,?,?,?)',
+            (datos.nombre, datos.descripcion, datos.categoria, datos.precio, datos.stock, datos.imagen, usuario['id']))
+        return persistencia._buscar_producto(con, cur.lastrowid)
+
+
+@app.put('/api/merchandising/proveedor/productos/{idProducto}', response_model=Producto)
+def modificar_producto_proveedor(idProducto: int, datos: ProductoInput, usuario: dict = Depends(exigir_proveedor)):
+    with persistencia.conexion(True) as con:
+        producto = persistencia._buscar_producto(con, idProducto)
+        if producto['idProveedor'] != usuario['id']:
+            raise HTTPException(403, 'Este producto pertenece a otro proveedor')
+        con.execute('UPDATE productos SET nombre=?,descripcion=?,categoria=?,precio=?,stock=?,imagen=? WHERE id=?',
+            (datos.nombre, datos.descripcion, datos.categoria, datos.precio, datos.stock, datos.imagen, idProducto))
+        return persistencia._buscar_producto(con, idProducto)
+
+
+@app.delete('/api/merchandising/proveedor/productos/{idProducto}', status_code=204)
+def eliminar_producto_proveedor(idProducto: int, usuario: dict = Depends(exigir_proveedor)):
+    with persistencia.conexion(True) as con:
+        producto = persistencia._buscar_producto(con, idProducto)
+        if producto['idProveedor'] != usuario['id']:
+            raise HTTPException(403, 'Este producto pertenece a otro proveedor')
+        if con.execute('SELECT 1 FROM compras WHERE idProducto=? LIMIT 1', (idProducto,)).fetchone():
+            raise HTTPException(409, 'El producto tiene compras asociadas')
+        con.execute('DELETE FROM productos WHERE id=?', (idProducto,))
+
+
 @app.exception_handler(RequestValidationError)
 async def error_validacion(request, exc):
     return JSONResponse(

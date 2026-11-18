@@ -139,6 +139,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return; // Cortamos aquí para que no siga cargando el perfil
             }
 
+            if (result.usuario.tipo === 'proveedor') {
+                sessionStorage.setItem(CLAVE_SESION, JSON.stringify(result));
+                sessionStorage.setItem('tipoUsuario', 'proveedor');
+                window.location.href = 'proveedor.html';
+                return;
+            }
+
             // Si es un cliente normal, sigue el flujo habitual
             sessionStorage.setItem('tipoUsuario', 'cliente');
             const persisted = saveSession(result);
