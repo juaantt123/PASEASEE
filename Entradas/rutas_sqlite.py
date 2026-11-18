@@ -1,5 +1,5 @@
 from datetime import date, datetime, timezone
-from fastapi import Header, HTTPException
+from fastapi import Depends, Header, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel
@@ -18,7 +18,7 @@ class ResumenVentasEntradas(BaseModel):
     ingresosCentimos: int
 
 
-def configurar(app, modelos, consultar_usuarios, url_usuarios):
+def configurar(app, modelos, consultar_usuarios, url_usuarios, exigir_admin):
     TipoEntrada, TipoEntradaInput, CompraEntrada, CompraEntradaInput, EntradaUsuario, ValidacionEntrada, EstadoEntrada, TipoNombre, EstadoTipo = modelos
 
     @app.on_event("startup")
@@ -54,7 +54,7 @@ def configurar(app, modelos, consultar_usuarios, url_usuarios):
         with conexion() as con:
             return [dict(f) for f in con.execute("SELECT * FROM tipos WHERE (? IS NULL OR nombre=?) AND (? IS NULL OR estado=?) ORDER BY id", (tipo, tipo, estado, estado))]
 
-    @app.post("/api/entradas", response_model=TipoEntrada, status_code=201)
+    @app.post("/api/entradas", response_model=TipoEntrada, status_code=201, dependencies=[Depends(exigir_admin)])
     def crear_tipo(datos: TipoEntradaInput):
         with conexion(True) as con:
             if con.execute("SELECT 1 FROM tipos WHERE nombre=?", (datos.nombre,)).fetchone():
@@ -146,7 +146,7 @@ def configurar(app, modelos, consultar_usuarios, url_usuarios):
                 con.execute("UPDATE compras SET estado='cancelada' WHERE idCompra=?", (e['idCompra'],))
             return entrada(con, idEntrada)
 
-    @app.post('/api/entradas/{idEntrada}/validar', response_model=ValidacionEntrada)
+    @app.post('/api/entradas/{idEntrada}/validar', response_model=ValidacionEntrada, dependencies=[Depends(exigir_admin)])
     def validar(idEntrada: int):
         with conexion(True) as con:
             if entrada(con, idEntrada)['estado'] != 'valida':
@@ -164,7 +164,7 @@ def configurar(app, modelos, consultar_usuarios, url_usuarios):
         with conexion() as con:
             return tipo(con, idTipoEntrada)
 
-    @app.put('/api/entradas/{idTipoEntrada}', response_model=TipoEntrada)
+    @app.put('/api/entradas/{idTipoEntrada}', response_model=TipoEntrada, dependencies=[Depends(exigir_admin)])
     def modificar(idTipoEntrada: int, datos: TipoEntradaInput):
         with conexion(True) as con:
             t = tipo(con, idTipoEntrada)
@@ -177,7 +177,7 @@ def configurar(app, modelos, consultar_usuarios, url_usuarios):
             con.execute('UPDATE tipos SET nombre=?,descripcion=?,precio=?,stockTotal=?,stockDisponible=?,fechaInicioValidez=?,fechaFinValidez=?,estado=? WHERE id=?', (datos.nombre, datos.descripcion, datos.precio, datos.stockTotal, stock, datos.fechaInicioValidez.isoformat(), datos.fechaFinValidez.isoformat(), 'disponible' if stock else 'agotada', idTipoEntrada))
             return tipo(con, idTipoEntrada)
 
-    @app.delete('/api/entradas/{idTipoEntrada}', status_code=204)
+    @app.delete('/api/entradas/{idTipoEntrada}', status_code=204, dependencies=[Depends(exigir_admin)])
     def eliminar(idTipoEntrada: int):
         with conexion(True) as con:
             tipo(con, idTipoEntrada)

@@ -91,7 +91,15 @@ def plataforma():
             pila.callback(detener, proceso)
             esperar(nombre, proceso, urls[nombre], log, cliente)
 
+        # Las escrituras de administración y Estadísticas exigen sesión de administrador;
+        # Usuarios crea ese usuario al arrancar. Una sesión de cliente la sustituye.
+        login = cliente.post(urls["Usuarios"] + "/api/usuarios/login",
+                             json={"email": "admin@subsonic.com", "password": "admin12345"})
+        login.raise_for_status()
+        admin = {"Authorization": f"Bearer {login.json()['token']}"}
+
         def pedir(servicio, metodo, ruta, codigo=200, **kwargs):
+            kwargs["headers"] = {**admin, **kwargs.get("headers", {})}
             respuesta = cliente.request(metodo, urls[servicio] + "/api" + ruta, **kwargs)
             if codigo is None:
                 return respuesta

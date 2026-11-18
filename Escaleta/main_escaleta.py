@@ -4,13 +4,13 @@ from datetime import date, datetime, time
 from pathlib import Path
 from typing import Annotated, Literal
 from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
+from urllib.request import Request as PeticionHTTP, urlopen
 from zoneinfo import ZoneInfo
 import json
 import os
 import sqlite3
 
-from fastapi import FastAPI, HTTPException, Path as PathParam, Query, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Path as PathParam, Query, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
@@ -168,6 +168,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+USUARIOS_URL = os.getenv("USUARIOS_URL", "http://127.0.0.1:8001/api").rstrip("/")
+
+
+def exigir_admin(authorization: str | None = Header(default=None)):
+    """Solo un administrador con sesión válida en Usuarios puede modificar datos."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Inicia sesión como administrador")
+    peticion = PeticionHTTP(
+        f"{USUARIOS_URL}/usuarios/sesion", headers={"Authorization": authorization}
+    )
+    try:
+        with urlopen(peticion, timeout=3) as respuesta:
+            usuario = json.loads(respuesta.read().decode("utf-8"))
+    except HTTPError as exc:
+        if exc.code in (401, 403):
+            raise HTTPException(status_code=401, detail="La sesión no es válida") from exc
+        raise HTTPException(status_code=503, detail="No se puede verificar la sesión") from exc
+    except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        raise HTTPException(status_code=503, detail="No se puede verificar la sesión") from exc
+    if usuario.get("tipo") != "administrador":
+        raise HTTPException(status_code=403, detail="Acceso exclusivo para administradores")
+
+
 @app.exception_handler(RequestValidationError)
 async def error_validacion(request, exc):
     return JSONResponse(status_code=400, content={'codigo': 400, 'mensaje': 'Datos o parámetros no válidos. Comprueba identificadores, fecha y horas.'})
@@ -302,7 +325,7 @@ def nombre_artista_unico(con, nombre, excluir=0):
         raise HTTPException(409, 'Ya existe un artista con ese nombre')
 
 
-@app.post('/api/escaleta/artistas', response_model=Artista, status_code=201, tags=['Artistas'])
+@app.post('/api/escaleta/artistas', response_model=Artista, status_code=201, tags=['Artistas'], dependencies=[Depends(exigir_admin)])
 def crear_artista(datos: ArtistaInput):
     with conexion(True) as con:
         nombre_artista_unico(con, datos.nombre)
@@ -316,7 +339,7 @@ def obtener_artista(idArtista: Id):
         return buscar_artista(con, idArtista)
 
 
-@app.put('/api/escaleta/artistas/{idArtista}', response_model=Artista, tags=['Artistas'])
+@app.put('/api/escaleta/artistas/{idArtista}', response_model=Artista, tags=['Artistas'], dependencies=[Depends(exigir_admin)])
 def modificar_artista(idArtista: Id, datos: ArtistaInput):
     with conexion(True) as con:
         buscar_artista(con, idArtista)
@@ -325,7 +348,7 @@ def modificar_artista(idArtista: Id, datos: ArtistaInput):
         return buscar_artista(con, idArtista)
 
 
-@app.delete('/api/escaleta/artistas/{idArtista}', status_code=204, tags=['Artistas'])
+@app.delete('/api/escaleta/artistas/{idArtista}', status_code=204, tags=['Artistas'], dependencies=[Depends(exigir_admin)])
 def eliminar_artista(idArtista: Id):
     with conexion(True) as con:
         buscar_artista(con, idArtista)
@@ -335,7 +358,7 @@ def eliminar_artista(idArtista: Id):
     return Response(status_code=204)
 
 
-@app.post('/api/escaleta', response_model=Actuacion, status_code=201, tags=['Escaleta'])
+@app.post('/api/escaleta', response_model=Actuacion, status_code=201, tags=['Escaleta'], dependencies=[Depends(exigir_admin)])
 def crear_actuacion(datos: ActuacionInput):
     with conexion(True) as con:
         espacio = validar_actuacion(con, datos)
@@ -359,14 +382,14 @@ def guardar_actuacion(con, identificador, datos):
     return buscar_actuacion(con, identificador)
 
 
-@app.put('/api/escaleta/{idActuacion}', response_model=Actuacion, tags=['Escaleta'])
+@app.put('/api/escaleta/{idActuacion}', response_model=Actuacion, tags=['Escaleta'], dependencies=[Depends(exigir_admin)])
 def modificar_actuacion(idActuacion: Id, datos: ActuacionInput):
     with conexion(True) as con:
         buscar_actuacion(con, idActuacion)
         return guardar_actuacion(con, idActuacion, datos)
 
 
-@app.patch('/api/escaleta/{idActuacion}/horario', response_model=Actuacion, tags=['Escaleta'])
+@app.patch('/api/escaleta/{idActuacion}/horario', response_model=Actuacion, tags=['Escaleta'], dependencies=[Depends(exigir_admin)])
 def cambiar_horario(idActuacion: Id, datos: Horario):
     with conexion(True) as con:
         anterior = buscar_actuacion(con, idActuacion)
@@ -374,7 +397,7 @@ def cambiar_horario(idActuacion: Id, datos: Horario):
         return guardar_actuacion(con, idActuacion, entrada)
 
 
-@app.patch('/api/escaleta/{idActuacion}/espacio', response_model=Actuacion, tags=['Escaleta'])
+@app.patch('/api/escaleta/{idActuacion}/espacio', response_model=Actuacion, tags=['Escaleta'], dependencies=[Depends(exigir_admin)])
 def cambiar_espacio(idActuacion: Id, datos: ActualizacionEspacio):
     with conexion(True) as con:
         anterior = buscar_actuacion(con, idActuacion)
@@ -382,7 +405,7 @@ def cambiar_espacio(idActuacion: Id, datos: ActualizacionEspacio):
         return guardar_actuacion(con, idActuacion, entrada)
 
 
-@app.delete('/api/escaleta/{idActuacion}', status_code=204, tags=['Escaleta'])
+@app.delete('/api/escaleta/{idActuacion}', status_code=204, tags=['Escaleta'], dependencies=[Depends(exigir_admin)])
 def eliminar_actuacion(idActuacion: Id):
     with conexion(True) as con:
         buscar_actuacion(con, idActuacion)

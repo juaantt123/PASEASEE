@@ -17,6 +17,12 @@ function cambiarPestana(idSeccion, botonGatillo) {
     botonGatillo.classList.add('active');
 }
 
+function cabecerasAdmin(extra = {}) {
+    let token = '';
+    try { token = JSON.parse(sessionStorage.getItem('subsonic-sesion') || 'null')?.token || ''; } catch {}
+    return { ...extra, Authorization: `Bearer ${token}` };
+}
+
 function cerrarSesionAdmin() {
     sessionStorage.removeItem('tipoUsuario');
     sessionStorage.removeItem('subsonic-sesion');
@@ -156,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function eliminarRegistro(tipo, id, urlBase) {
     if (!confirm(`¿Seguro que quieres eliminar este elemento?`)) return;
     try {
-        const res = await fetch(`${urlBase}/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${urlBase}/${id}`, { method: 'DELETE', headers: cabecerasAdmin() });
         if (res.ok) {
             if (tipo === 'artista' || tipo === 'actuacion') cargarArtistas();
             if (tipo === 'espacio') cargarEspacios();
@@ -248,7 +254,7 @@ async function enviarFormulario(urlBase, id, datos, recargarFunc, cancelarFunc) 
     try {
         const res = await fetch(id ? `${urlBase}/${id}` : urlBase, {
             method: id ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: cabecerasAdmin({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(datos)
         });
         if (res.ok) { cancelarFunc(); recargarFunc(); }
@@ -257,7 +263,7 @@ async function enviarFormulario(urlBase, id, datos, recargarFunc, cancelarFunc) 
 }
 
 async function peticionEscaleta(url, method, datos) {
-    const res = await fetch(url, { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(datos) });
+    const res = await fetch(url, { method, headers: cabecerasAdmin({'Content-Type': 'application/json'}), body: JSON.stringify(datos) });
     if (!res.ok) {
         let detalle = `Error ${res.status}`;
         try { const error = await res.json(); detalle = error.mensaje || detalle; } catch {}

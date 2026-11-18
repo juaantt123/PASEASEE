@@ -155,6 +155,14 @@ def usuario_de_sesion(authorization: str | None, id_usuario: int | None = None):
     return buscar_usuario(fila['idUsuario'])
 
 
+def propietario_o_admin(authorization: str | None, id_usuario: int):
+    """Solo el propio usuario o un administrador pueden modificar una cuenta."""
+    usuario = usuario_de_sesion(authorization)
+    if usuario.id != id_usuario and usuario.tipo != 'administrador':
+        raise HTTPException(403, 'No puedes modificar los datos de otro usuario')
+    return usuario
+
+
 def fecha_para_sql(fecha):
     return fecha.isoformat() if isinstance(fecha, (date, datetime)) else fecha
 
@@ -256,7 +264,9 @@ def obtener_usuario(idUsuario: int):
     return buscar_usuario(idUsuario)
 
 @app.put('/api/usuarios/{idUsuario}', response_model=Usuario)
-def modificar_usuario(idUsuario: int, datos: UsuarioInput):
+def modificar_usuario(idUsuario: int, datos: UsuarioInput,
+                      authorization: str | None = Header(default=None)):
+    propietario_o_admin(authorization, idUsuario)
     buscar_usuario(idUsuario)
     comprobar_email(datos.email, excluir_id=idUsuario)
     with conectar() as con:
@@ -270,7 +280,8 @@ def modificar_usuario(idUsuario: int, datos: UsuarioInput):
     return buscar_usuario(idUsuario)
 
 @app.delete('/api/usuarios/{idUsuario}', status_code=204)
-def eliminar_usuario(idUsuario: int):
+def eliminar_usuario(idUsuario: int, authorization: str | None = Header(default=None)):
+    propietario_o_admin(authorization, idUsuario)
     buscar_usuario(idUsuario)
     with conectar() as con:
         con.execute('DELETE FROM usuarios WHERE id=?', (idUsuario,))
@@ -310,7 +321,9 @@ def agregar_metodo_pago(idUsuario: int, datos: MetodoPagoInput):
     return metodo_de_fila(fila)
 
 @app.delete('/api/usuarios/{idUsuario}/metodos-pago/{idMetodoPago}', status_code=204)
-def eliminar_metodo_pago(idUsuario: int, idMetodoPago: int):
+def eliminar_metodo_pago(idUsuario: int, idMetodoPago: int,
+                         authorization: str | None = Header(default=None)):
+    propietario_o_admin(authorization, idUsuario)
     buscar_usuario(idUsuario)
     with conectar() as con:
         fila = con.execute('SELECT * FROM metodos_pago WHERE id=? AND idUsuario=?',
@@ -338,7 +351,9 @@ def actualizar_perfil(idUsuario: int, datos: ActualizacionPerfil,
     return buscar_usuario(idUsuario)
 
 @app.put('/api/usuarios/{idUsuario}/foto', response_model=Usuario)
-def actualizar_foto(idUsuario: int, datos: FotoPerfil):
+def actualizar_foto(idUsuario: int, datos: FotoPerfil,
+                    authorization: str | None = Header(default=None)):
+    propietario_o_admin(authorization, idUsuario)
     buscar_usuario(idUsuario)
     with conectar() as con:
         con.execute('UPDATE usuarios SET fotoPerfil=? WHERE id=?', (datos.url, idUsuario))

@@ -3,9 +3,9 @@ import json
 import os
 from typing import Literal
 from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
+from urllib.request import Request as PeticionHTTP, urlopen
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -165,6 +165,26 @@ def comprobar_metodo_pago(idUsuario: int, idMetodoPago: int):
 # VALIDACIÓN DE ERRORES
 # ==========================================
 
+def exigir_admin(authorization: str | None = Header(default=None)):
+    """Solo un administrador con sesión válida en Usuarios puede modificar datos."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Inicia sesión como administrador")
+    peticion = PeticionHTTP(
+        f"{USUARIOS_URL}/usuarios/sesion", headers={"Authorization": authorization}
+    )
+    try:
+        with urlopen(peticion, timeout=3) as respuesta:
+            usuario = json.loads(respuesta.read().decode("utf-8"))
+    except HTTPError as exc:
+        if exc.code in (401, 403):
+            raise HTTPException(status_code=401, detail="La sesión no es válida") from exc
+        raise HTTPException(status_code=503, detail="No se puede verificar la sesión") from exc
+    except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        raise HTTPException(status_code=503, detail="No se puede verificar la sesión") from exc
+    if usuario.get("tipo") != "administrador":
+        raise HTTPException(status_code=403, detail="Acceso exclusivo para administradores")
+
+
 @app.exception_handler(RequestValidationError)
 async def error_validacion(request, exc):
     return JSONResponse(
@@ -204,7 +224,7 @@ def listar_productos(
 
 
 # POST /api/merchandising
-@app.post("/api/merchandising", response_model=Producto, status_code=201)
+@app.post("/api/merchandising", response_model=Producto, status_code=201, dependencies=[Depends(exigir_admin)])
 def crear_producto(datos: ProductoInput):
     return persistencia.crear_producto(datos.model_dump())
 
@@ -285,7 +305,7 @@ def obtener_producto(idProducto: int):
 
 
 # PUT /api/merchandising/{idProducto}
-@app.put("/api/merchandising/{idProducto}", response_model=Producto)
+@app.put("/api/merchandising/{idProducto}", response_model=Producto, dependencies=[Depends(exigir_admin)])
 def modificar_producto(idProducto: int, datos: ProductoInput):
     # El contrato no define un 409 para esta operación,
     # por lo que aquí no se comprueban productos repetidos.
@@ -293,7 +313,7 @@ def modificar_producto(idProducto: int, datos: ProductoInput):
 
 
 # DELETE /api/merchandising/{idProducto}
-@app.delete("/api/merchandising/{idProducto}", status_code=204)
+@app.delete("/api/merchandising/{idProducto}", status_code=204, dependencies=[Depends(exigir_admin)])
 def eliminar_producto(idProducto: int):
     persistencia.eliminar_producto(idProducto)
     return None
@@ -316,7 +336,7 @@ def obtener_stock(idProducto: int):
 
 
 # PATCH /api/merchandising/{idProducto}/stock
-@app.patch("/api/merchandising/{idProducto}/stock", response_model=Stock)
+@app.patch("/api/merchandising/{idProducto}/stock", response_model=Stock, dependencies=[Depends(exigir_admin)])
 def actualizar_stock(idProducto: int, datos: ActualizacionStock):
     producto = persistencia.actualizar_stock(idProducto, datos.stock)
 

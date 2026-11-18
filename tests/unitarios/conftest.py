@@ -23,6 +23,10 @@ def servicio(monkeypatch, tmp_path):
             monkeypatch.setattr(importlib.import_module(persistencia),
                                "DB_PATH", tmp_path / f"{archivo}.sqlite3")
         modulo = importlib.reload(importlib.import_module(MODULOS[nombre]))
+        # Las operaciones de escritura exigen un administrador de Usuarios; aquí se
+        # simula. tests/unitarios/test_autenticacion.py comprueba la protección real.
+        if hasattr(modulo, "exigir_admin"):
+            modulo.app.dependency_overrides[modulo.exigir_admin] = lambda: None
         return modulo, TestClient(modulo.app)
 
     return cargar

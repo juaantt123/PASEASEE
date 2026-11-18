@@ -4,9 +4,9 @@ import os
 from typing import Literal
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.request import Request as PeticionHTTP, urlopen
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -119,6 +119,29 @@ def llamada_escaleta(ruta: str, parametros: dict | None = None):
         ) from exc
 
 
+USUARIOS_URL = os.getenv("USUARIOS_URL", "http://127.0.0.1:8001/api").rstrip("/")
+
+
+def exigir_admin(authorization: str | None = Header(default=None)):
+    """Solo un administrador con sesión válida en Usuarios puede modificar datos."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Inicia sesión como administrador")
+    peticion = PeticionHTTP(
+        f"{USUARIOS_URL}/usuarios/sesion", headers={"Authorization": authorization}
+    )
+    try:
+        with urlopen(peticion, timeout=3) as respuesta:
+            usuario = json.loads(respuesta.read().decode("utf-8"))
+    except HTTPError as exc:
+        if exc.code in (401, 403):
+            raise HTTPException(status_code=401, detail="La sesión no es válida") from exc
+        raise HTTPException(status_code=503, detail="No se puede verificar la sesión") from exc
+    except (URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        raise HTTPException(status_code=503, detail="No se puede verificar la sesión") from exc
+    if usuario.get("tipo") != "administrador":
+        raise HTTPException(status_code=403, detail="Acceso exclusivo para administradores")
+
+
 @app.exception_handler(RequestValidationError)
 async def error_validacion(request, exc):
     return JSONResponse(
@@ -225,7 +248,7 @@ def espacios_por_tipo(tipo: TipoEspacio):
 
 
 # POST /api/espacios
-@app.post("/api/espacios", response_model=Espacio, status_code=201)
+@app.post("/api/espacios", response_model=Espacio, status_code=201, dependencies=[Depends(exigir_admin)])
 def crear_espacio(datos: EspacioInput):
     if any(e.nombre.casefold() == datos.nombre.casefold() for e in persistencia.listar(Espacio)):
         raise HTTPException(status_code=409, detail="Ya existe un espacio con ese nombre")
@@ -239,7 +262,7 @@ def obtener_espacio(idEspacio: int):
 
 
 # PUT /api/espacios/{idEspacio}
-@app.put("/api/espacios/{idEspacio}", response_model=Espacio)
+@app.put("/api/espacios/{idEspacio}", response_model=Espacio, dependencies=[Depends(exigir_admin)])
 def modificar_espacio(idEspacio: int, datos: EspacioInput):
     espacio = buscar_espacio(idEspacio)
     if any(e.id != idEspacio and e.nombre.casefold() == datos.nombre.casefold() for e in persistencia.listar(Espacio)):
@@ -248,7 +271,7 @@ def modificar_espacio(idEspacio: int, datos: EspacioInput):
 
 
 # DELETE /api/espacios/{idEspacio}
-@app.delete("/api/espacios/{idEspacio}", status_code=204)
+@app.delete("/api/espacios/{idEspacio}", status_code=204, dependencies=[Depends(exigir_admin)])
 def eliminar_espacio(idEspacio: int):
     espacio = buscar_espacio(idEspacio)
     actuaciones = llamada_escaleta(f"/escaleta/espacio/{idEspacio}")
@@ -264,14 +287,14 @@ def eliminar_espacio(idEspacio: int):
 
 
 # PATCH /api/espacios/{idEspacio}/estado
-@app.patch("/api/espacios/{idEspacio}/estado", response_model=Espacio)
+@app.patch("/api/espacios/{idEspacio}/estado", response_model=Espacio, dependencies=[Depends(exigir_admin)])
 def actualizar_estado(idEspacio: int, datos: ActualizacionEstado):
     espacio = buscar_espacio(idEspacio)
     return persistencia.actualizar_campo(idEspacio, "estado", datos.estado, Espacio)
 
 
 # PATCH /api/espacios/{idEspacio}/capacidad
-@app.patch("/api/espacios/{idEspacio}/capacidad", response_model=Espacio)
+@app.patch("/api/espacios/{idEspacio}/capacidad", response_model=Espacio, dependencies=[Depends(exigir_admin)])
 def actualizar_capacidad(idEspacio: int, datos: ActualizacionCapacidad):
     espacio = buscar_espacio(idEspacio)
     return persistencia.actualizar_campo(idEspacio, "capacidad", datos.capacidad, Espacio)

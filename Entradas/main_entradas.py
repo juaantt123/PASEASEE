@@ -14,7 +14,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["null"],
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
-    allow_methods=["GET", "POST", "PATCH"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
 )
 URL_USUARIOS = os.getenv("URL_USUARIOS", "http://127.0.0.1:8001/api")
@@ -111,10 +111,27 @@ def consultar_usuarios(id_usuario: int, id_pago: int | None = None):
         raise HTTPException(503, "Microservicio Usuarios no disponible")
 
 
+def exigir_admin(authorization: str | None = Header(default=None)):
+    """Solo un administrador con sesion valida en Usuarios puede modificar datos."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "Inicia sesion como administrador")
+    try:
+        respuesta = httpx.get(f"{URL_USUARIOS}/usuarios/sesion",
+                              headers={"Authorization": authorization}, timeout=5)
+        if respuesta.status_code in (401, 403):
+            raise HTTPException(401, "La sesion no es valida")
+        if respuesta.status_code != 200:
+            raise HTTPException(503, "No se puede verificar la sesion")
+        tipo = respuesta.json().get("tipo")
+    except (httpx.RequestError, ValueError, AttributeError):
+        raise HTTPException(503, "Microservicio Usuarios no disponible")
+    if tipo != "administrador":
+        raise HTTPException(403, "Acceso exclusivo para administradores")
+
 
 try:
     from .rutas_sqlite import configurar
 except ImportError:
     from rutas_sqlite import configurar
 
-configurar(app, (TipoEntrada, TipoEntradaInput, CompraEntrada, CompraEntradaInput, EntradaUsuario, ValidacionEntrada, EstadoEntrada, TipoNombre, EstadoTipo), consultar_usuarios, URL_USUARIOS)
+configurar(app, (TipoEntrada, TipoEntradaInput, CompraEntrada, CompraEntradaInput, EntradaUsuario, ValidacionEntrada, EstadoEntrada, TipoNombre, EstadoTipo), consultar_usuarios, URL_USUARIOS, exigir_admin)
