@@ -10,33 +10,6 @@ const API_BASES_ENTRADAS = [
     'http://127.0.0.1:8081/api/entradas'
 ].filter(Boolean);
 const CLAVE_SESION = 'subsonic-sesion';
-const ARTISTAS_POR_DIA = {
-    Martes: [
-        ['17:00–18:00', 'DJ Lumen', 'Main Stage'],
-        ['18:00–19:00', 'Vértice', 'Underground'],
-        ['19:00–20:00', 'Alba Echo', 'Chill Garden'],
-        ['20:00–21:00', 'Marea', 'Chill Garden'],
-        ['21:00–22:00', 'Nébula', 'Underground'],
-        ['22:00–23:00', 'Haberiiu', 'Main Stage']
-    ],
-    Miércoles: [
-        ['17:00–18:00', 'Solaris', 'Main Stage'],
-        ['18:00–19:00', 'Prisma', 'Underground'],
-        ['19:00–20:00', 'Luna Roja', 'Chill Garden'],
-        ['20:00–21:00', 'Daddy Yankee', 'Chill Garden'],
-        ['21:00–22:00', 'DJ Pepo', 'Underground'],
-        ['22:00–23:00', 'Lía Nova', 'Main Stage']
-    ],
-    Jueves: [
-        ['17:00–18:00', 'Aurora Beat', 'Main Stage'],
-        ['18:00–19:00', 'Kairo', 'Underground'],
-        ['19:00–20:00', 'Sol de Noche', 'Chill Garden'],
-        ['20:00–21:00', 'Rayo Neon', 'Main Stage'],
-        ['21:00–22:00', 'Frecuencia Cero', 'Underground'],
-        ['22:00–23:00', 'Atlas', 'Main Stage']
-    ]
-};
-
 document.addEventListener('DOMContentLoaded', () => {
     const authContainer = document.getElementById('account-auth');
     const profilePanel = document.getElementById('profile-panel');
@@ -264,34 +237,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function renderSchedule() {
+async function renderSchedule() {
     const container = document.getElementById('account-schedule');
     container.replaceChildren();
-
-    Object.entries(ARTISTAS_POR_DIA).forEach(([day, artists]) => {
-        const card = document.createElement('article');
-        card.className = 'account-day-card';
-
-        const heading = document.createElement('h5');
-        heading.textContent = day;
-        card.append(heading);
-
-        const list = document.createElement('ul');
-        artists.forEach(([time, artist, stage]) => {
-            const item = document.createElement('li');
-            const timeLabel = document.createElement('strong');
-            timeLabel.textContent = time;
-            const artistLabel = document.createElement('span');
-            artistLabel.textContent = artist;
-            const stageLabel = document.createElement('small');
-            stageLabel.textContent = stage;
-            item.append(timeLabel, artistLabel, stageLabel);
-            list.append(item);
-        });
-
-        card.append(list);
-        container.append(card);
-    });
+    try {
+        const response = await fetch('http://127.0.0.1:8002/api/escaleta');
+        if (!response.ok) throw new Error('No se pudo consultar Escaleta.');
+        const actuaciones = (await response.json()).filter(a => a.estado !== 'cancelada');
+        actuaciones.sort((a, b) => (a.fecha + a.horaInicio).localeCompare(b.fecha + b.horaInicio));
+        if (!actuaciones.length) { container.textContent = 'No hay actuaciones programadas.'; return; }
+        const dias = new Map();
+        for (const a of actuaciones) {
+            if (!dias.has(a.fecha)) dias.set(a.fecha, []);
+            dias.get(a.fecha).push(a);
+        }
+        for (const [fecha, artistas] of dias) {
+            const card = document.createElement('article'); card.className = 'account-day-card';
+            const heading = document.createElement('h5'); heading.textContent = formatDate(fecha);
+            const list = document.createElement('ul');
+            for (const a of artistas) {
+                const item = document.createElement('li');
+                const hora = document.createElement('strong'); hora.textContent = `${a.horaInicio.slice(0, 5)}–${a.horaFin.slice(0, 5)}`;
+                const artista = document.createElement('span'); artista.textContent = a.nombreArtista;
+                const espacio = document.createElement('small'); espacio.textContent = a.nombreEspacio;
+                item.append(hora, artista, espacio); list.append(item);
+            }
+            card.append(heading, list); container.append(card);
+        }
+    } catch { container.textContent = 'No se pudo cargar la programación de Escaleta.'; }
 }
 
 async function loadAccountDashboard(userId, token) {

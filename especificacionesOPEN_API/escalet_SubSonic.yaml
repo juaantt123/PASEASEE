@@ -13,7 +13,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://localhost:8000/api
+  - url: http://localhost:8002/api
     description: Servidor local
 
 tags:
@@ -21,6 +21,66 @@ tags:
     description: Gestión de la programación del festival
 
 paths:
+
+  /escaleta/artistas:
+    get:
+      summary: Listar artistas
+      responses:
+        '200':
+          description: Lista de artistas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Artista'}
+    post:
+      summary: Crear artista (administrador)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ArtistaInput'}
+      responses:
+        '201': {description: Artista creado}
+        '401': {description: Sesión no válida}
+        '403': {description: Acceso reservado al administrador}
+        '409': {description: Nombre duplicado}
+  /escaleta/artistas/{idArtista}:
+    parameters:
+      - {name: idArtista, in: path, required: true, schema: {type: integer, minimum: 1}}
+    get:
+      summary: Consultar artista
+      responses:
+        '200':
+          description: Artista
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Artista'}
+        '404': {description: Artista no encontrado}
+    put:
+      summary: Modificar artista (administrador)
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ArtistaInput'}
+      responses:
+        '200': {description: Artista actualizado}
+        '401': {description: Sesión no válida}
+        '403': {description: Acceso reservado al administrador}
+        '404': {description: Artista no encontrado}
+        '409': {description: Nombre duplicado}
+    delete:
+      summary: Eliminar artista (administrador)
+      security: [{bearerAuth: []}]
+      responses:
+        '204': {description: Artista eliminado}
+        '401': {description: Sesión no válida}
+        '403': {description: Acceso reservado al administrador}
+        '404': {description: Artista no encontrado}
+        '409': {description: Tiene actuaciones asociadas}
 
   /escaleta:
     get:
@@ -602,8 +662,23 @@ paths:
 
 
 components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}
 
   schemas:
+    ArtistaInput:
+      type: object
+      required: [nombre]
+      properties:
+        nombre: {type: string, minLength: 1, maxLength: 200}
+        genero: {type: string, minLength: 1, maxLength: 100, default: sin especificar}
+    Artista:
+      allOf:
+        - {$ref: '#/components/schemas/ArtistaInput'}
+        - type: object
+          required: [id]
+          properties:
+            id: {type: integer}
 
     Actuacion:
       type: object

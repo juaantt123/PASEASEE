@@ -73,6 +73,8 @@ def plataforma():
                    USUARIOS_DB=str(temp / "usuarios.sqlite3"),
                    ESPACIOS_DB=str(temp / "espacios.sqlite3"),
                    CLAVE_INTERNA_ESTADISTICAS="clave-temporal-pruebas",
+                   SUBSONIC_ADMIN_EMAIL="admin-prueba@example.test",
+                   SUBSONIC_ADMIN_PASSWORD="ClavePrueba123",
                    ESCALETA_URL=urls["Escaleta"] + "/api",
                    ESPACIOS_URL=urls["Espacios"] + "/api",
                    URL_USUARIOS=urls["Usuarios"] + "/api",
@@ -94,7 +96,7 @@ def plataforma():
 
         # Las operaciones de administración y Estadísticas requieren sesión de administrador.
         login = cliente.post(urls["Usuarios"] + "/api/usuarios/login",
-                             json={"email": "admin@subsonic.com", "password": "admin12345"})
+                             json={"email": env["SUBSONIC_ADMIN_EMAIL"], "password": env["SUBSONIC_ADMIN_PASSWORD"]})
         login.raise_for_status()
         admin = {"Authorization": f"Bearer {login.json()['token']}"}
 

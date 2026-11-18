@@ -3,11 +3,11 @@ cd /d "%~dp0"
 
 :: --- VARIABLES DE ENTORNO (AUTOMATIZADAS) ---
 :: 1. Clave interna para que la API de Estadísticas no dé error
-set CLAVE_INTERNA_ESTADISTICAS=clave_estadisticas_123
+if not defined CLAVE_INTERNA_ESTADISTICAS (echo Configura CLAVE_INTERNA_ESTADISTICAS. & exit /b 1)
 
 :: 2. Credenciales de administrador para la API de Usuarios
-set SUBSONIC_ADMIN_EMAIL=admin@subsonic.com
-set SUBSONIC_ADMIN_PASSWORD=admin12345
+if not defined SUBSONIC_ADMIN_EMAIL (echo Configura SUBSONIC_ADMIN_EMAIL. & exit /b 1)
+if not defined SUBSONIC_ADMIN_PASSWORD (echo Configura SUBSONIC_ADMIN_PASSWORD. & exit /b 1)
 
 if not exist ".venv\Scripts\python.exe" (
     echo No se encuentra .venv. Instala las dependencias siguiendo el README.

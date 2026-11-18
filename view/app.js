@@ -1,3 +1,7 @@
+function escaparHTML(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, caracter => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[caracter]));
+}
+
 const RUTAS = {
     entradas: 'entradas.html',
     escaleta: 'escaleta.html',
@@ -106,9 +110,9 @@ function renderizarActuaciones(actuaciones) {
     grid.innerHTML = actuaciones.map(act => `
         <article class="card" onclick="navegarA('escaleta')">
             <div class="card-icon">🎵</div>
-            <h3>${act.nombreArtista}</h3>
-            <p style="margin-bottom: 0.5rem; font-weight: 700;">${act.nombreEspacio}</p>
-            <p>🗓️ ${act.fecha.split('-').reverse().join('/')} &nbsp;|&nbsp; 🕒 ${act.horaInicio.slice(0, 5)}</p>
+            <h3>${escaparHTML(act.nombreArtista)}</h3>
+            <p style="margin-bottom: 0.5rem; font-weight: 700;">${escaparHTML(act.nombreEspacio)}</p>
+            <p>🗓️ ${escaparHTML(act.fecha.split('-').reverse().join('/'))} &nbsp;|&nbsp; 🕒 ${escaparHTML(act.horaInicio.slice(0, 5))}</p>
             <span class="card-link">Ver en escaleta &rarr;</span>
         </article>
     `).join('');
@@ -128,14 +132,14 @@ function renderizarProductos(productos) {
     grid.innerHTML = productos.map(prod => `
         <article class="shop-card">
             <div class="shop-art">
-                <span>${prod.nombre.substring(0, 3).toUpperCase()}<br>${prod.categoria.substring(0, 4).toUpperCase()}</span>
+                <span>${escaparHTML(prod.nombre.substring(0, 3).toUpperCase())}<br>${escaparHTML(prod.categoria.substring(0, 4).toUpperCase())}</span>
             </div>
             <div class="shop-card-content">
-                <span class="shop-category">${prod.categoria.toUpperCase()}</span>
-                <h3>${prod.nombre}</h3>
+                <span class="shop-category">${escaparHTML(prod.categoria.toUpperCase())}</span>
+                <h3>${escaparHTML(prod.nombre)}</h3>
                 <div class="shop-card-footer">
-                    <span class="shop-price">${prod.precio.toLocaleString('es-ES')} €</span>
-                    <a class="btn shop-buy-button" href="comprar-producto.html?producto=${prod.id}">Comprar</a>
+                    <span class="shop-price">${escaparHTML(prod.precio.toLocaleString('es-ES'))} €</span>
+                    <a class="btn shop-buy-button" href="comprar-producto.html?producto=${escaparHTML(prod.id)}">Comprar</a>
                 </div>
             </div>
         </article>
@@ -158,14 +162,14 @@ function renderizarProductos(productos) {
     grid.innerHTML = productos.map(prod => `
         <article class="shop-card">
             <div class="shop-art">
-                <span>${prod.nombre.substring(0, 3).toUpperCase()}<br>${prod.categoria.substring(0, 4).toUpperCase()}</span>
+                <span>${escaparHTML(prod.nombre.substring(0, 3).toUpperCase())}<br>${escaparHTML(prod.categoria.substring(0, 4).toUpperCase())}</span>
             </div>
             <div class="shop-card-content">
-                <span class="shop-category">${prod.categoria.toUpperCase()}</span>
-                <h3>${prod.nombre}</h3>
+                <span class="shop-category">${escaparHTML(prod.categoria.toUpperCase())}</span>
+                <h3>${escaparHTML(prod.nombre)}</h3>
                 <div class="shop-card-footer">
-                    <span class="shop-price">${prod.precio.toLocaleString('es-ES')} €</span>
-                    <a class="btn shop-buy-button" href="comprar-producto.html?producto=${prod.id}">Comprar</a>
+                    <span class="shop-price">${escaparHTML(prod.precio.toLocaleString('es-ES'))} €</span>
+                    <a class="btn shop-buy-button" href="comprar-producto.html?producto=${escaparHTML(prod.id)}">Comprar</a>
                 </div>
             </div>
         </article>
@@ -203,7 +207,7 @@ function renderizarEscaleta(actuaciones) {
         return;
     }
 
-    const porEscenario = {};
+    const porEscenario = Object.create(null);
     actuaciones.forEach(act => {
         if (!porEscenario[act.nombreEspacio]) {
             porEscenario[act.nombreEspacio] = [];
@@ -218,7 +222,7 @@ function renderizarEscaleta(actuaciones) {
             <div class="tickets-heading" style="margin-top: 3rem; margin-bottom: 2rem;">
                 <div>
                     <span class="eyebrow">ESCENARIO</span>
-                    <h2>${escenario}</h2>
+                    <h2>${escaparHTML(escenario)}</h2>
                 </div>
             </div>
             <div class="cards-grid">
@@ -232,10 +236,10 @@ function renderizarEscaleta(actuaciones) {
             html += `
                 <article class="card">
                     <div class="card-icon">🎤</div>
-                    <h3>${act.nombreArtista}</h3>
-                    <p style="margin-bottom: 0.5rem; font-weight: 700;">${fechaBonita}</p>
-                    <p style="color: var(--text-gray);">🕒 ${horaInicio} - ${horaFin}</p>
-                    <span class="card-link" onclick="mostrarNotificacion('Has seleccionado a ${act.nombreArtista}')">Ver detalles &rarr;</span>
+                    <h3>${escaparHTML(act.nombreArtista)}</h3>
+                    <p style="margin-bottom: 0.5rem; font-weight: 700;">${escaparHTML(fechaBonita)}</p>
+                    <p style="color: var(--text-gray);">🕒 ${escaparHTML(horaInicio)} - ${escaparHTML(horaFin)}</p>
+                    <span class="card-link" onclick="mostrarNotificacion('Actuación seleccionada')">Ver detalles &rarr;</span>
                 </article>
             `;
         });

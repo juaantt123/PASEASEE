@@ -1,3 +1,7 @@
+function escaparHTML(valor) {
+    return String(valor ?? '').replace(/[&<>"']/g, caracter => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[caracter]));
+}
+
 // --- GUARDIA DE SEGURIDAD ---
 if (sessionStorage.getItem('tipoUsuario') !== 'administrador') {
     window.location.href = 'index.html';
@@ -45,14 +49,14 @@ async function cargarArtistas() {
 
         // Rellenar selector de edición
         selectExistente.innerHTML = '<option value="">-- Crear nuevo artista --</option>' + 
-            cache.artistas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+            cache.artistas.map(a => `<option value="${escaparHTML(a.id)}">${escaparHTML(a.nombre)}</option>`).join('');
 
         // Montar tabla cruzando Artistas y Actuaciones
         tbody.innerHTML = cache.artistas.map(artista => {
             const acts = cache.actuaciones.filter(a => a.idArtista === artista.id);
             if (acts.length === 0) {
                 return `<tr>
-                    <td><strong>${artista.nombre}</strong></td><td>${artista.genero}</td>
+                    <td><strong>${escaparHTML(artista.nombre)}</strong></td><td>${escaparHTML(artista.genero)}</td>
                     <td><small style="color:#888;">Sin programar</small></td>
                     <td>
                         <button class="action-btn" onclick="editarActuacion(${artista.id}, null)">✏️</button>
@@ -61,8 +65,8 @@ async function cargarArtistas() {
                 </tr>`;
             }
             return acts.map(act => `<tr>
-                <td><strong>${artista.nombre}</strong></td><td>${artista.genero}</td>
-                <td><small style="color:#c2ff00;">${act.fecha} | ${act.horaInicio.slice(0,5)} - ${act.horaFin.slice(0,5)}</small><br><small style="color:#888;">${act.nombreEspacio}</small></td>
+                <td><strong>${escaparHTML(artista.nombre)}</strong></td><td>${escaparHTML(artista.genero)}</td>
+                <td><small style="color:#c2ff00;">${escaparHTML(act.fecha)} | ${escaparHTML(act.horaInicio.slice(0,5))} - ${escaparHTML(act.horaFin.slice(0,5))}</small><br><small style="color:#888;">${escaparHTML(act.nombreEspacio)}</small></td>
                 <td>
                     <button class="action-btn" onclick="editarActuacion(${artista.id}, ${act.id})">✏️</button>
                     <button class="action-btn delete" onclick="eliminarRegistro('actuacion', ${act.id}, '${API_ESCALETA}/escaleta')">🗑️</button>
@@ -91,10 +95,10 @@ async function cargarEspacios() {
         actualizarEscenarios(); // Recarga el desplegable de escenarios en la pestaña Artistas
         tbody.innerHTML = cache.espacios.map(e => `
             <tr>
-                <td><strong>${e.nombre}</strong></td>
-                <td>${e.tipo}<br><small style="color:#888;">${e.ubicacion}</small></td>
-                <td>${e.capacidad} pax</td>
-                <td><span class="status-badge">${e.estado}</span></td>
+                <td><strong>${escaparHTML(e.nombre)}</strong></td>
+                <td>${escaparHTML(e.tipo)}<br><small style="color:#888;">${escaparHTML(e.ubicacion)}</small></td>
+                <td>${escaparHTML(e.capacidad)} pax</td>
+                <td><span class="status-badge">${escaparHTML(e.estado)}</span></td>
                 <td>
                     <button class="action-btn" onclick="prepararEdicion('espacio', ${e.id})">✏️</button>
                     <button class="action-btn delete" onclick="eliminarRegistro('espacio', ${e.id}, '${API_ESPACIOS}/espacios')">🗑️</button>
@@ -112,10 +116,10 @@ async function cargarEntradas() {
         cache.entradas = await res.json();
         tbody.innerHTML = cache.entradas.map(e => `
             <tr>
-                <td><strong>${e.nombre}</strong><br><small style="color:#888">${e.descripcion}</small></td>
-                <td>${e.precio} €</td>
-                <td>${e.stockDisponible} / ${e.stockTotal}</td>
-                <td><span class="status-badge">${e.estado}</span></td>
+                <td><strong>${escaparHTML(e.nombre)}</strong><br><small style="color:#888">${escaparHTML(e.descripcion)}</small></td>
+                <td>${escaparHTML(e.precio)} €</td>
+                <td>${escaparHTML(e.stockDisponible)} / ${escaparHTML(e.stockTotal)}</td>
+                <td><span class="status-badge">${escaparHTML(e.estado)}</span></td>
                 <td>
                     <button class="action-btn" onclick="prepararEdicion('entrada', ${e.id})">✏️</button>
                     <button class="action-btn delete" onclick="eliminarRegistro('entrada', ${e.id}, '${API_ENTRADAS}/entradas')">🗑️</button>
@@ -133,10 +137,10 @@ async function cargarTienda() {
         cache.tienda = await res.json();
         tbody.innerHTML = cache.tienda.map(p => `
             <tr>
-                <td><strong>${p.nombre}</strong></td>
-                <td style="text-transform: capitalize;">${p.categoria}</td>
-                <td>${p.precio} €</td>
-                <td>${p.stock} uds</td>
+                <td><strong>${escaparHTML(p.nombre)}</strong></td>
+                <td style="text-transform: capitalize;">${escaparHTML(p.categoria)}</td>
+                <td>${escaparHTML(p.precio)} €</td>
+                <td>${escaparHTML(p.stock)} uds</td>
                 <td>
                     <button class="action-btn" onclick="prepararEdicion('producto', ${p.id})">✏️</button>
                     <button class="action-btn delete" onclick="eliminarRegistro('producto', ${p.id}, '${API_TIENDA}/merchandising')">🗑️</button>

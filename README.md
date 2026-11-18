@@ -1,70 +1,47 @@
 # Subsonic Festival - Práctica 2
 
-El proyecto contiene APIs independientes para Usuarios, Entradas, Espacios, Escaleta, Merchandising y Estadísticas, además de la interfaz web en `view/`. Escaleta y Entradas usan SQLite; los demás servicios mantienen actualmente sus datos en memoria.
+El proyecto contiene servicios FastAPI para Entradas, Usuarios, Escaleta, Espacios, Merchandising y Estadísticas, y una interfaz web en `view/`. Usuarios, Entradas, Escaleta, Espacios y Merchandising almacenan datos en bases SQLite locales. Estadísticas consulta los demás servicios.
 
-## Preparar el entorno
+## Preparación en Windows
 
-Abre PowerShell en la carpeta `PASEASEE-main` y prepara un entorno Python común para los servicios:
+Desde PowerShell, en la raíz del proyecto:
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements-test.txt
 ```
 
-## Ejecutar todos los servicios
+## Arranque
 
-En PowerShell, desde la carpeta del proyecto, configura una clave local compartida y arranca las APIs:
+Configura en cada terminal que arranque los servicios una clave compartida y las credenciales para crear el administrador inicial:
 
 ```powershell
-$env:CLAVE_INTERNA_ESTADISTICAS = "cambia-esta-clave-local"
+$env:CLAVE_INTERNA_ESTADISTICAS = "clave-local-de-ejemplo"
+$env:SUBSONIC_ADMIN_EMAIL = "admin@example.test"
+$env:SUBSONIC_ADMIN_PASSWORD = "elige-una-clave-local"
 .\apis.bat
 ```
 
-Las ventanas abiertas heredan la misma clave. Si arrancas Entradas y Estadísticas manualmente, define la misma variable en ambas ventanas antes de iniciarlos. Mantén la clave fuera del repositorio. El resumen de compras se usa para calcular estadísticas y no devuelve datos personales.
+La primera vez se crea el administrador si no existe una cuenta con ese correo. Las variables no cambian la contraseña ni el rol de cuentas ya existentes. Usa tus propios valores y no los subas a Git. Para arrancar servicios manualmente, configura las mismas variables en sus terminales.
 
-Para abrir la web, en otra ventana ejecuta `.\.venv\Scripts\python.exe -m http.server 5500 --directory view` y visita `http://127.0.0.1:5500/`.
+En otra terminal, ejecuta ` .\.venv\Scripts\python.exe -m http.server 5500 --directory view` y abre http://127.0.0.1:5500/. Inicia sesión con el administrador en Perfil para acceder al panel. El perfil consulta la programación de Escaleta.
 
-## Probar compra de entradas desde la interfaz
+| Servicio | Puerto | Documentación |
+| --- | --- | --- |
+| Entradas | 8000 | http://127.0.0.1:8000/docs |
+| Usuarios | 8001 | http://127.0.0.1:8001/docs |
+| Escaleta | 8002 | http://127.0.0.1:8002/docs |
+| Espacios | 8003 | http://127.0.0.1:8003/docs |
+| Merchandising | 8004 | http://127.0.0.1:8004/docs |
+| Estadísticas | 8005 | http://127.0.0.1:8005/docs |
 
-Abre tres ventanas de PowerShell. Ejecuta cada comando desde la carpeta `PASEASEE-main`:
+Los archivos SQLite se crean en las carpetas `data` de cada servicio y no se suben a Git. Cada compañero tiene sus propios datos. Las variables `USUARIOS_DB`, `ENTRADAS_DB`, `ESCALETA_DB`, `ESPACIOS_DB` y `MERCHANDISING_DB` permiten seleccionar otras rutas para las bases de datos.
+
+## Pruebas
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn Usuarios.main_usuario:app --reload --port 8001
+.\.venv\Scripts\python.exe -m pytest tests/unitarios -v
+.\.venv\Scripts\python.exe -m pytest tests/integracion -v
 ```
 
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn Entradas.main_entradas:app --reload --port 8000
-```
-
-```powershell
-.\.venv\Scripts\python.exe -m http.server 5500 --directory view
-```
-
-Abre `http://127.0.0.1:5500/`. En **Perfil**, crea una cuenta e inicia sesión. En **Entradas**, el catálogo y los precios provienen de la API; selecciona una entrada y continúa. El formulario pide datos ficticios de tarjeta, crea un método de pago de prueba en Usuarios y registra la compra en Entradas. No se realiza ningún cobro. Después puedes consultar tus entradas en Perfil.
-
-Para comprobar las APIs directamente, abre `http://127.0.0.1:8001/docs` (Usuarios) y `http://127.0.0.1:8000/docs` (Entradas). También se puede comprobar el stock en `GET /api/entradas/disponibles` antes y después de una compra.
-
-## Puertos de desarrollo
-
-| Componente | Puerto |
-| --- | ---: |
-| Entradas | 8000 |
-| Usuarios | 8001 |
-| Escaleta | 8002 |
-| Espacios | 8003 |
-| Merchandising | 8004 |
-| Estadísticas | 8005 |
-| Interfaz web | 5500 |
-
-Escaleta consulta Espacios en `http://127.0.0.1:8003/api` por defecto. Las dependencias y direcciones se pueden cambiar mediante las variables de entorno que leen los módulos.
-
-## Estado observado y continuación
-
-El PDF sitúa el trabajo en una progresión de estructura y lógica, persistencia, interfaz y pruebas, y después correcciones. En esta copia se conectó el flujo del catálogo y compra de Entradas con Usuarios y Entradas; Escaleta y Entradas ya persisten en SQLite. La persistencia de los otros componentes y la integración de la tienda de merchandising con su API siguen siendo trabajo pendiente.
-
-## Cálculo de estadísticas de entradas
-
-Los ingresos se calculan con el precio de la compra original. Si se cancela parte de una compra, se descuenta la proporción correspondiente a las entradas canceladas y se redondea cada compra a céntimos. Las ventas por día se atribuyen a la fecha de compra y cuentan cada compra con alguna entrada activa. Son importes de la demostración, no cobros reales.
-
-Las bases de datos locales y el entorno `.venv` no deben subirse al repositorio. Usuarios todavía guarda cuentas y sesiones en memoria: sus identificadores pueden reutilizarse tras reiniciar, por lo que las compras persistidas no deben considerarse asociadas de forma segura hasta implementar persistencia en Usuarios.
+Las pruebas de integración arrancan sus servicios con bases temporales y un administrador de pruebas. El saldo y las compras son demostrativos; no se realizan cobros reales.

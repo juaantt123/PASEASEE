@@ -13,7 +13,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://localhost:8000/api
+  - url: http://localhost:8001/api
     description: Servidor local
 
 tags:
@@ -21,6 +21,56 @@ tags:
     description: Gestión de los usuarios de Subsonic Festival
 
 paths:
+
+  /usuarios/sesion:
+    get:
+      summary: Consultar la sesión actual
+      security: [{bearerAuth: []}]
+      responses:
+        '200':
+          description: Usuario autenticado
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Usuario'}
+        '401': {description: Sesión no válida}
+  /usuarios/{idUsuario}/saldo:
+    parameters:
+      - {name: idUsuario, in: path, required: true, schema: {type: integer}}
+    get:
+      summary: Consultar saldo de prueba
+      security: [{bearerAuth: []}]
+      responses:
+        '200': {description: Saldo actual}
+        '401': {description: Sesión no válida}
+  /usuarios/{idUsuario}/saldo/recargar:
+    parameters:
+      - {name: idUsuario, in: path, required: true, schema: {type: integer}}
+    post:
+      summary: Recargar saldo de prueba
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MovimientoSaldo'}
+      responses:
+        '200': {description: Saldo actualizado}
+        '401': {description: Sesión no válida}
+  /usuarios/{idUsuario}/saldo/gastar:
+    parameters:
+      - {name: idUsuario, in: path, required: true, schema: {type: integer}}
+    post:
+      summary: Gastar saldo de prueba
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MovimientoSaldo'}
+      responses:
+        '200': {description: Saldo actualizado}
+        '401': {description: Sesión no válida}
+        '409': {description: Saldo insuficiente}
 
   /usuarios:
     get:
@@ -594,8 +644,16 @@ paths:
 
 
 components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}
 
   schemas:
+    MovimientoSaldo:
+      type: object
+      required: [importe, concepto]
+      properties:
+        importe: {type: number, exclusiveMinimum: true, minimum: 0, maximum: 1000}
+        concepto: {type: string, minLength: 1, maxLength: 120}
 
     Usuario:
       type: object

@@ -4,8 +4,6 @@ from typing import Literal
 import hashlib
 import hmac
 import secrets
-os.environ["SUBSONIC_ADMIN_EMAIL"] = "admin@subsonic.com"
-os.environ["SUBSONIC_ADMIN_PASSWORD"] = "admin12345"
 import sqlite3
 
 from fastapi import FastAPI, Header, HTTPException
@@ -374,15 +372,16 @@ inicializar()
 # CREACIÓN AUTOMÁTICA DEL ADMINISTRADOR
 # ==========================================
 def asegurar_administrador():
+    email = os.getenv('SUBSONIC_ADMIN_EMAIL', '').strip()
+    password = os.getenv('SUBSONIC_ADMIN_PASSWORD', '')
+    if not email or not password:
+        return
     with conectar() as con:
-        # Comprobamos si el admin ya está en la base de datos
-        admin_existe = con.execute("SELECT 1 FROM usuarios WHERE email='admin@subsonic.com'").fetchone()
-        
-        if not admin_existe:
-            salt, hash_password = generar_hash("admin12345")
-            con.execute('''
-                INSERT INTO usuarios (nombre, apellidos, email, tipo, fechaRegistro, salt, hash_password)
-                VALUES ('Administrador', 'Subsonic', 'admin@subsonic.com', 'administrador', ?, ?, ?)
-            ''', (datetime.now(timezone.utc).isoformat(), salt, hash_password))
+        if con.execute('SELECT 1 FROM usuarios WHERE email=?', (email,)).fetchone() is None:
+            salt, hash_password = generar_hash(password)
+            con.execute("""INSERT INTO usuarios
+                (nombre, apellidos, email, tipo, fechaRegistro, salt, hash_password)
+                VALUES ('Administrador', 'Subsonic', ?, 'administrador', ?, ?, ?)""",
+                (email, datetime.now(timezone.utc).isoformat(), salt, hash_password))
 
 asegurar_administrador()
