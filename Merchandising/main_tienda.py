@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 import json
 import os
 from typing import Literal
@@ -30,10 +30,6 @@ CategoriaProducto = Literal[
 ]
 TallaProducto = Literal["XS", "S", "M", "L", "XL", "XXL"]
 EstadoCompra = Literal["realizada", "preparada", "entregada", "cancelada"]
-
-# Categorías para las que es obligatorio indicar la talla al comprar
-CATEGORIAS_CON_TALLA = ("camiseta", "sudadera")
-
 
 # ==========================================
 # MODELOS DE DATOS SEGÚN EL YAML
@@ -88,43 +84,15 @@ class Error(BaseModel):
 
 
 # ==========================================
-# DATOS PROVISIONALES
+# PERSISTENCIA (SQLite)
 # ==========================================
 
-productos = [
-    Producto(
-        id=1,
-        nombre="Camiseta oficial Subsonic 2027",
-        descripcion="Camiseta de algodón con el cartel de la edición.",
-        categoria="camiseta",
-        precio=25.0,
-        stock=300,
-        imagen="camiseta_oficial.png",
-        disponible=True
-    ),
-    Producto(
-        id=2,
-        nombre="Sudadera Subsonic Night",
-        descripcion="Sudadera con capucha y logotipo reflectante.",
-        categoria="sudadera",
-        precio=45.0,
-        stock=120,
-        imagen="sudadera_night.png",
-        disponible=True
-    ),
-    Producto(
-        id=3,
-        nombre="Póster conmemorativo",
-        descripcion="Póster numerado de la edición 2027.",
-        categoria="poster",
-        precio=12.0,
-        stock=0,
-        imagen="poster_2027.png",
-        disponible=False
-    )
-]
+try:
+    from . import persistencia_merch as persistencia
+except ImportError:
+    import persistencia_merch as persistencia
 
-compras = []
+persistencia.inicializar()
 
 
 # ==========================================
@@ -194,52 +162,6 @@ def comprobar_metodo_pago(idUsuario: int, idMetodoPago: int):
 
 
 # ==========================================
-# FUNCIONES AUXILIARES
-# ==========================================
-
-def buscar_producto(idProducto: int):
-    for producto in productos:
-        if producto.id == idProducto:
-            return producto
-
-    raise HTTPException(
-        status_code=404,
-        detail="Producto no encontrado"
-    )
-
-
-def buscar_compra(idCompra: int):
-    for compra in compras:
-        if compra.idCompra == idCompra:
-            return compra
-
-    raise HTTPException(
-        status_code=404,
-        detail="Compra no encontrada"
-    )
-
-
-def actualizar_disponibilidad(producto: Producto):
-    """El campo disponible no se almacena, se deduce del stock."""
-    producto.disponible = producto.stock > 0
-    return producto
-
-
-def comprobar_duplicado(nombre: str, categoria: str, excluir_id=None):
-    """Un producto se considera repetido si coinciden nombre y categoría."""
-    for producto in productos:
-        if (
-            producto.nombre.strip().lower() == nombre.strip().lower()
-            and producto.categoria == categoria
-            and producto.id != excluir_id
-        ):
-            raise HTTPException(
-                status_code=409,
-                detail="Ya existe un producto con esos datos"
-            )
-
-
-# ==========================================
 # VALIDACIÓN DE ERRORES
 # ==========================================
 
@@ -278,32 +200,13 @@ def listar_productos(
     categoria: CategoriaProducto | None = None,
     disponible: bool | None = None
 ):
-    resultado = productos
-
-    if categoria is not None:
-        resultado = [p for p in resultado if p.categoria == categoria]
-
-    if disponible is not None:
-        resultado = [p for p in resultado if p.disponible == disponible]
-
-    return resultado
+    return persistencia.listar_productos(categoria, disponible)
 
 
 # POST /api/merchandising
 @app.post("/api/merchandising", response_model=Producto, status_code=201)
 def crear_producto(datos: ProductoInput):
-    comprobar_duplicado(datos.nombre, datos.categoria)
-
-    nuevo_id = max((p.id for p in productos), default=0) + 1
-
-    nuevo = Producto(
-        id=nuevo_id,
-        **datos.model_dump(),
-        disponible=datos.stock > 0
-    )
-
-    productos.append(nuevo)
-    return nuevo
+    return persistencia.crear_producto(datos.model_dump())
 
 
 # ==========================================
@@ -315,7 +218,7 @@ def crear_producto(datos: ProductoInput):
 # GET /api/merchandising/disponibles
 @app.get("/api/merchandising/disponibles", response_model=list[Producto])
 def productos_disponibles():
-    return [p for p in productos if p.stock > 0]
+    return persistencia.listar_productos(disponible=True)
 
 
 # ==========================================
@@ -335,48 +238,10 @@ def comprar_producto(datos: CompraMerchandisingInput):
     # Comprobar que el método de pago es suyo
     comprobar_metodo_pago(datos.idUsuario, datos.idMetodoPago)
 
-    # Comprobar el producto
-    producto = buscar_producto(datos.idProducto)
-
-    # La talla solo se exige en las categorías que la necesitan
-    if producto.categoria in CATEGORIAS_CON_TALLA and datos.talla is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Es necesario indicar la talla para este producto"
-        )
-
-    if producto.categoria not in CATEGORIAS_CON_TALLA and datos.talla is not None:
-        raise HTTPException(
-            status_code=400,
-            detail="Este producto no admite talla"
-        )
-
-    # Comprobar el stock disponible
-    if producto.stock < datos.cantidad:
-        raise HTTPException(
-            status_code=409,
-            detail="No hay suficiente stock disponible"
-        )
-
-    # Descontar el stock reservado para la compra
-    producto.stock = producto.stock - datos.cantidad
-    actualizar_disponibilidad(producto)
-
-    nuevo_id = max((c.idCompra for c in compras), default=0) + 1
-
-    nueva_compra = CompraMerchandising(
-        idCompra=nuevo_id,
-        idUsuario=datos.idUsuario,
-        idProducto=datos.idProducto,
-        cantidad=datos.cantidad,
-        talla=datos.talla,
-        precioTotal=round(producto.precio * datos.cantidad, 2),
-        fechaCompra=datetime.now(timezone.utc),
-        estado="realizada"
+    # Producto, talla y stock se validan y descuentan en una sola transacción
+    return persistencia.registrar_compra(
+        datos.idUsuario, datos.idProducto, datos.cantidad, datos.talla
     )
-
-    compras.append(nueva_compra)
-    return nueva_compra
 
 
 # GET /api/merchandising/compras/{idCompra}
@@ -385,7 +250,7 @@ def comprar_producto(datos: CompraMerchandisingInput):
     response_model=CompraMerchandising
 )
 def obtener_compra(idCompra: int):
-    return buscar_compra(idCompra)
+    return persistencia.obtener_compra(idCompra)
 
 
 # PATCH /api/merchandising/compras/{idCompra}/cancelar
@@ -394,30 +259,7 @@ def obtener_compra(idCompra: int):
     response_model=CompraMerchandising
 )
 def cancelar_compra(idCompra: int):
-    compra = buscar_compra(idCompra)
-
-    if compra.estado == "cancelada":
-        raise HTTPException(
-            status_code=409,
-            detail="La compra ya está cancelada"
-        )
-
-    if compra.estado == "entregada":
-        raise HTTPException(
-            status_code=409,
-            detail="Una compra entregada no puede cancelarse"
-        )
-
-    compra.estado = "cancelada"
-
-    # Devolver el stock al producto
-    for producto in productos:
-        if producto.id == compra.idProducto:
-            producto.stock = producto.stock + compra.cantidad
-            actualizar_disponibilidad(producto)
-            break
-
-    return compra
+    return persistencia.cancelar_compra(idCompra)
 
 
 # GET /api/merchandising/usuarios/{idUsuario}/compras
@@ -429,7 +271,7 @@ def compras_del_usuario(idUsuario: int):
     # Comprobar en Usuarios que el usuario existe
     comprobar_usuario(idUsuario)
 
-    return [c for c in compras if c.idUsuario == idUsuario]
+    return persistencia.compras_de_usuario(idUsuario)
 
 
 # ==========================================
@@ -439,36 +281,21 @@ def compras_del_usuario(idUsuario: int):
 # GET /api/merchandising/{idProducto}
 @app.get("/api/merchandising/{idProducto}", response_model=Producto)
 def obtener_producto(idProducto: int):
-    return buscar_producto(idProducto)
+    return persistencia.obtener_producto(idProducto)
 
 
 # PUT /api/merchandising/{idProducto}
 @app.put("/api/merchandising/{idProducto}", response_model=Producto)
 def modificar_producto(idProducto: int, datos: ProductoInput):
-    producto = buscar_producto(idProducto)
-
     # El contrato no define un 409 para esta operación,
     # por lo que aquí no se comprueban productos repetidos.
-
-    for campo, valor in datos.model_dump().items():
-        setattr(producto, campo, valor)
-
-    actualizar_disponibilidad(producto)
-    return producto
+    return persistencia.modificar_producto(idProducto, datos.model_dump())
 
 
 # DELETE /api/merchandising/{idProducto}
 @app.delete("/api/merchandising/{idProducto}", status_code=204)
 def eliminar_producto(idProducto: int):
-    producto = buscar_producto(idProducto)
-
-    if any(c.idProducto == idProducto for c in compras):
-        raise HTTPException(
-            status_code=409,
-            detail="El producto tiene compras asociadas"
-        )
-
-    productos.remove(producto)
+    persistencia.eliminar_producto(idProducto)
     return None
 
 
@@ -479,25 +306,22 @@ def eliminar_producto(idProducto: int):
 # GET /api/merchandising/{idProducto}/stock
 @app.get("/api/merchandising/{idProducto}/stock", response_model=Stock)
 def obtener_stock(idProducto: int):
-    producto = buscar_producto(idProducto)
+    producto = persistencia.obtener_producto(idProducto)
 
     return Stock(
-        idProducto=producto.id,
-        stock=producto.stock,
-        disponible=producto.stock > 0
+        idProducto=producto["id"],
+        stock=producto["stock"],
+        disponible=producto["disponible"]
     )
 
 
 # PATCH /api/merchandising/{idProducto}/stock
 @app.patch("/api/merchandising/{idProducto}/stock", response_model=Stock)
 def actualizar_stock(idProducto: int, datos: ActualizacionStock):
-    producto = buscar_producto(idProducto)
-
-    producto.stock = datos.stock
-    actualizar_disponibilidad(producto)
+    producto = persistencia.actualizar_stock(idProducto, datos.stock)
 
     return Stock(
-        idProducto=producto.id,
-        stock=producto.stock,
-        disponible=producto.disponible
+        idProducto=producto["id"],
+        stock=producto["stock"],
+        disponible=producto["disponible"]
     )

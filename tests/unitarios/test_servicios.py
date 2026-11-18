@@ -152,10 +152,27 @@ def test_estadisticas(servicio, monkeypatch, codigo):
         datos = [{"id": 1, "tipo": "cliente"}, {"id": 2, "tipo": "proveedor"}]
         return httpx.Response(200, json={"invalido": True} if codigo == 503 else datos)
 
+    class SesionAdmin:
+        """Sustituye la comprobación de sesión que Estadísticas hace en Usuarios."""
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def get(self, url, **kwargs):
+            assert url.endswith("/usuarios/sesion")
+            return httpx.Response(200, json={"id": 1, "tipo": "administrador"})
+
     monkeypatch.setattr(modulo.httpx, "get", origen)
+    monkeypatch.setattr(modulo.httpx, "AsyncClient", SesionAdmin)
+    admin = {"Authorization": "Bearer sesion-de-prueba"}
     with cliente:
         if codigo == 400:
-            error = estado(cliente.get("/api/estadisticas/ingresos", params={
+            error = estado(cliente.get("/api/estadisticas/ingresos", headers=admin, params={
                 "fechaInicio": "2027-07-18", "fechaFin": "2027-07-16",
             }), 400)
             assert not llamadas
@@ -163,7 +180,7 @@ def test_estadisticas(servicio, monkeypatch, codigo):
             error = estado(cliente.get("/api/recomendaciones/99999"), 404)
             assert len(llamadas) == 1
         else:
-            error = estado(cliente.get("/api/estadisticas/usuarios"), codigo)
+            error = estado(cliente.get("/api/estadisticas/usuarios", headers=admin), codigo)
         if codigo == 200:
             assert {k: error[k] for k in ("totalUsuarios", "clientes", "proveedores", "administradores")} == {
                 "totalUsuarios": 2, "clientes": 1, "proveedores": 1, "administradores": 0,

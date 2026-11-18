@@ -1,7 +1,11 @@
+import os
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).resolve().parent / 'data' / 'usuarios.sqlite3'
+DB_PATH = Path(os.getenv(
+    'USUARIOS_DB',
+    Path(__file__).resolve().parent / 'data' / 'usuarios.sqlite3'
+))
 
 
 def conectar():

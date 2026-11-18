@@ -2,3 +2,6 @@ fastapi
 uvicorn[standard]
 pydantic>=2
 httpx
+tzdata
+httpx2
+pytest
