@@ -72,6 +72,7 @@ def plataforma():
                    MERCHANDISING_DB=str(temp / "merchandising.sqlite3"),
                    USUARIOS_DB=str(temp / "usuarios.sqlite3"),
                    ESPACIOS_DB=str(temp / "espacios.sqlite3"),
+                   CLAVE_INTERNA_ESTADISTICAS="clave-temporal-pruebas",
                    ESCALETA_URL=urls["Escaleta"] + "/api",
                    ESPACIOS_URL=urls["Espacios"] + "/api",
                    URL_USUARIOS=urls["Usuarios"] + "/api",
@@ -91,15 +92,22 @@ def plataforma():
             pila.callback(detener, proceso)
             esperar(nombre, proceso, urls[nombre], log, cliente)
 
-        # Las escrituras de administración y Estadísticas exigen sesión de administrador;
-        # Usuarios crea ese usuario al arrancar. Una sesión de cliente la sustituye.
+        # Las operaciones de administración y Estadísticas requieren sesión de administrador.
         login = cliente.post(urls["Usuarios"] + "/api/usuarios/login",
                              json={"email": "admin@subsonic.com", "password": "admin12345"})
         login.raise_for_status()
         admin = {"Authorization": f"Bearer {login.json()['token']}"}
 
         def pedir(servicio, metodo, ruta, codigo=200, **kwargs):
-            kwargs["headers"] = {**admin, **kwargs.get("headers", {})}
+            requiere_admin = servicio == "Estadisticas" or (
+                servicio == "Escaleta" and metodo.upper() in {"POST", "PUT", "PATCH", "DELETE"}
+            ) or (
+                servicio == "Entradas" and (
+                    metodo.upper() == "PUT" or ruta.endswith("/validar")
+                )
+            )
+            if requiere_admin:
+                kwargs["headers"] = {**admin, **kwargs.get("headers", {})}
             respuesta = cliente.request(metodo, urls[servicio] + "/api" + ruta, **kwargs)
             if codigo is None:
                 return respuesta

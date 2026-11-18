@@ -143,6 +143,23 @@ def test_estadisticas(servicio, monkeypatch, codigo):
     modulo, cliente = servicio("Estadisticas")
     llamadas = []
 
+    class SesionAdminFalsa:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            return False
+
+        async def get(self, url, **kwargs):
+            return httpx.Response(
+                200, json={"id": 1, "tipo": "administrador"},
+                request=httpx.Request("GET", url),
+            )
+
+    # Estadísticas comprueba el token contra Usuarios antes de ejecutar la ruta.
+    monkeypatch.setattr(modulo.httpx, "AsyncClient", lambda **kwargs: SesionAdminFalsa())
+    cliente.headers.update({"Authorization": "Bearer token-admin-de-prueba"})
+
     def origen(url, **kwargs):
         llamadas.append(url)
         if codigo == 404:
