@@ -4,6 +4,7 @@ from datetime import date, datetime, time
 from pathlib import Path
 from typing import Annotated, Literal
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
 from urllib.request import Request as PeticionHTTP, urlopen
 from zoneinfo import ZoneInfo
 import json
@@ -104,7 +105,6 @@ def conexion(escritura=False):
     con.execute('PRAGMA foreign_keys=ON')
     try:
         if escritura:
-            # Serializa comprobación de solapamientos y escritura, incluso con varias peticiones.
             con.execute('BEGIN IMMEDIATE')
         yield con
         if escritura:
@@ -139,7 +139,6 @@ def inicializar_bd():
             );
             CREATE INDEX IF NOT EXISTS idx_espacio_fecha ON actuaciones(idEspacio, fecha);
         ''')
-        # Se añade una sola vez; el indicador evita reaparecer si el usuario lo elimina.
         con.execute('CREATE TABLE IF NOT EXISTS metadatos (clave TEXT PRIMARY KEY)')
         with_seed = con.execute("SELECT 1 FROM metadatos WHERE clave='semilla_v1'").fetchone()
     if not with_seed:
@@ -156,7 +155,7 @@ async def lifespan(app):
 
 
 app = FastAPI(title='API Escaleta - Subsonic Festival', version='1.0.0', lifespan=lifespan,
-              responses={code: {'model': Error, 'description': text} for code,text in {
+              responses={code: {'model': Error, 'description': text} for code, text in {
                   400: 'Datos o parámetros no válidos.', 404: 'Recurso no encontrado.',
                   409: 'Conflicto de horario, recurso no operativo o dependencia existente.',
                   503: 'Espacios o la base de datos de Escaleta no están disponibles.'}.items()})
@@ -206,7 +205,7 @@ async def error_bd(request, exc):
     return JSONResponse(status_code=503, content={'codigo': 503, 'mensaje': 'No se puede acceder a la base de datos de Escaleta.'})
 
 
-def consultar_espacio(identificador):
+def consultar_espacio(identificador, exigir_escenario_activo=True):
     try:
         with urlopen(f'{ESPACIOS_URL}/espacios/{identificador}', timeout=ESPACIOS_TIMEOUT) as r:
             espacio = EspacioRemoto.model_validate(json.loads(r.read().decode('utf-8')))
@@ -218,9 +217,30 @@ def consultar_espacio(identificador):
         raise HTTPException(503, 'No se puede consultar Espacios o su respuesta no es válida') from exc
     if espacio.id != identificador:
         raise HTTPException(503, 'Espacios ha devuelto un identificador incorrecto')
-    if espacio.tipo != 'escenario' or espacio.estado not in ('activo', 'libre'):
+    if exigir_escenario_activo and (espacio.tipo != 'escenario' or espacio.estado not in ('activo', 'libre')):
         raise HTTPException(409, 'El espacio debe ser un escenario activo')
     return espacio
+
+
+def consultar_disponibilidad_espacio(datos: ActuacionInput):
+    params = urlencode({
+        'fecha': datos.fecha.isoformat(),
+        'horaInicio': datos.horaInicio.isoformat(),
+        'horaFin': datos.horaFin.isoformat(),
+    })
+    try:
+        with urlopen(f'{ESPACIOS_URL}/espacios/disponibilidad?{params}', timeout=ESPACIOS_TIMEOUT) as r:
+            lista = json.loads(r.read().decode('utf-8'))
+    except HTTPError as exc:
+        raise HTTPException(503, 'Espacios no está disponible o ha rechazado la consulta de disponibilidad') from exc
+    except (URLError, OSError, TimeoutError, ValueError) as exc:
+        raise HTTPException(503, 'No se puede consultar la disponibilidad en Espacios') from exc
+    if not isinstance(lista, list):
+        raise HTTPException(503, 'Respuesta no válida de disponibilidad en Espacios')
+    for item in lista:
+        if item.get('idEspacio') == datos.idEspacio:
+            return bool(item.get('disponible', False))
+    return False
 
 
 SELECT_ACTUACIONES = '''SELECT a.*, ar.nombre AS nombreArtista FROM actuaciones a
@@ -243,8 +263,13 @@ def buscar_artista(con, identificador):
 
 def validar_actuacion(con, datos, excluir=0):
     buscar_artista(con, datos.idArtista)
-    espacio = consultar_espacio(datos.idEspacio)
+    espacio = consultar_espacio(datos.idEspacio, exigir_escenario_activo=True)
     if datos.estado != 'cancelada':
+        # Consulta disponibilidad según OpenAPI; en creación (excluir=0) se exige disponible=True.
+        disponible_remoto = consultar_disponibilidad_espacio(datos)
+        if excluir == 0 and not disponible_remoto:
+            raise HTTPException(409, 'El escenario no está disponible en esa franja horaria')
+        # Comprobación local (excluye la propia actuación en PUT/PATCH y valida también al artista).
         conflicto = con.execute('''SELECT id FROM actuaciones WHERE id<>? AND fecha=?
             AND estado<>'cancelada' AND (idEspacio=? OR idArtista=?)
             AND horaInicio < ? AND horaFin > ? LIMIT 1''',
@@ -302,7 +327,7 @@ def por_dia(fecha: date):
 
 @app.get('/api/escaleta/espacio/{idEspacio}', response_model=list[Actuacion], tags=['Escaleta'])
 def por_espacio(idEspacio: Id):
-    # No llama a Espacios: este endpoint lo utiliza Espacios para su disponibilidad.
+    consultar_espacio(idEspacio, exigir_escenario_activo=False)
     return listar_actuaciones(idEspacio=idEspacio)
 
 
@@ -320,7 +345,7 @@ def listar_artistas():
 
 
 def nombre_artista_unico(con, nombre, excluir=0):
-    if any(r['id'] != excluir and r['nombre'].casefold()==nombre.casefold()
+    if any(r['id'] != excluir and r['nombre'].casefold() == nombre.casefold()
            for r in con.execute('SELECT id,nombre FROM artistas')):
         raise HTTPException(409, 'Ya existe un artista con ese nombre')
 
@@ -416,7 +441,6 @@ def eliminar_actuacion(idActuacion: Id):
 def esquema_openapi():
     if app.openapi_schema is None:
         esquema = get_openapi(title=app.title, version=app.version, routes=app.routes)
-        # El manejador RequestValidationError devuelve 400, no el 422 automático.
         for item in esquema['paths'].values():
             for op in item.values():
                 if isinstance(op, dict):
