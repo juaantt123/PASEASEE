@@ -1,0 +1,141 @@
+services:
+  usuarios:
+    build:
+      context: .
+      dockerfile: Usuarios/Dockerfile
+    container_name: subsonic-usuarios
+    ports:
+      - "8001:8001"
+    environment:
+      - SUBSONIC_ADMIN_EMAIL=admin@subsonic.com
+      - SUBSONIC_ADMIN_PASSWORD=admin123
+    volumes:
+      - usuarios_data:/app/Usuarios/data
+    networks:
+      - subsonic-net
+    restart: unless-stopped
+
+  entradas:
+    build:
+      context: .
+      dockerfile: Entradas/Dockerfile
+    container_name: subsonic-entradas
+    ports:
+      - "8000:8000"
+    environment:
+      - URL_USUARIOS=http://usuarios:8001/api
+    volumes:
+      - entradas_data:/app/Entradas/data
+    depends_on:
+      - usuarios
+    networks:
+      - subsonic-net
+    restart: unless-stopped
+
+  escaleta:
+    build:
+      context: .
+      dockerfile: Escaleta/Dockerfile
+    container_name: subsonic-escaleta
+    ports:
+      - "8002:8002"
+    environment:
+      - USUARIOS_URL=http://usuarios:8001/api
+      - URL_USUARIOS=http://usuarios:8001/api
+      - ESPACIOS_URL=http://espacios:8003/api
+      - URL_ESPACIOS=http://espacios:8003/api
+    volumes:
+      - escaleta_data:/app/Escaleta/data
+    depends_on:
+      - usuarios
+      - espacios
+    networks:
+      - subsonic-net
+    restart: unless-stopped
+
+  espacios:
+    build:
+      context: .
+      dockerfile: Espacios/Dockerfile
+    container_name: subsonic-espacios
+    ports:
+      - "8003:8003"
+    environment:
+      - USUARIOS_URL=http://usuarios:8001/api
+      - ESCALETA_URL=http://escaleta:8002/api
+    volumes:
+      - espacios_data:/app/Espacios/data
+    depends_on:
+      - usuarios
+    networks:
+      - subsonic-net
+    restart: unless-stopped
+
+  merchandising:
+    build:
+      context: .
+      dockerfile: Merchandising/Dockerfile
+    container_name: subsonic-merchandising
+    ports:
+      - "8004:8004"
+    environment:
+      - USUARIOS_URL=http://usuarios:8001/api
+    volumes:
+      - merchandising_data:/app/Merchandising/data
+    depends_on:
+      - usuarios
+    networks:
+      - subsonic-net
+    restart: unless-stopped
+
+  estadisticas:
+    build:
+      context: .
+      dockerfile: Estadisticas/Dockerfile
+    container_name: subsonic-estadisticas
+    ports:
+      - "8005:8005"
+    environment:
+      - URL_USUARIOS=http://usuarios:8001/api
+      - URL_ENTRADAS=http://entradas:8000/api
+      - URL_ESCALETA=http://escaleta:8002/api
+      - URL_ESPACIOS=http://espacios:8003/api
+      - URL_MERCHANDISING=http://merchandising:8004/api
+    depends_on:
+      - usuarios
+      - entradas
+      - escaleta
+      - espacios
+      - merchandising
+    networks:
+      - subsonic-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: view/Dockerfile
+    container_name: subsonic-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - usuarios
+      - entradas
+      - escaleta
+      - espacios
+      - merchandising
+      - estadisticas
+    networks:
+      - subsonic-net
+    restart: unless-stopped
+
+networks:
+  subsonic-net:
+    driver: bridge
+
+volumes:
+  usuarios_data:
+  entradas_data:
+  escaleta_data:
+  espacios_data:
+  merchandising_data:
